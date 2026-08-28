@@ -1,0 +1,11 @@
+data-scraper/data/
+
+# secrets / local config
+.env
+data-scraper/.env
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/

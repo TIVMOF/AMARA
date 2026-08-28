@@ -39,6 +39,16 @@ def build_envelope(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]:
         "currency": result.get("currency"),
         "country": result.get("country"),
         "scraped_at": result["scraped_at"],
+
+        # Completeness. Without these a truncated crawl and a whole one produce
+        # identical-looking files - see issue #4. `complete` is false whenever a
+        # listing stopped for any reason other than genuinely running out, or
+        # any page stayed short after retries.
+        "complete": result.get("complete"),
+        "pages_fetched": result.get("pages_fetched"),
+        "short_pages": result.get("short_pages"),
+        "listings": result.get("listings", []),
+
         "products_seen": result.get("seen_raw", 0),
         "products_kept": len(products),
         "unmatched_vendors": result.get("unmatched_vendors", {}),
