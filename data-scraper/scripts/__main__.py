@@ -20,6 +20,7 @@ import sys
 
 from . import normalize, registry
 from .fetch import ConfigError, FetchError, Fetcher
+from .adapters.shopify import PAGE_SIZE
 from .probe import probe, suggest_yaml
 
 
@@ -58,6 +59,15 @@ def run_crawl(args: argparse.Namespace) -> int:
         kept, seen = len(result["products"]), result["seen_raw"]
         pct = (kept / seen * 100) if seen else 0
         print(f"  kept {kept} of {seen} products ({pct:.0f}%) -> {path.relative_to(normalize.ROOT)}")
+
+        if not result.get("complete"):
+            cut = ", ".join(f"{l['label']}: {l['stopped_reason']}"
+                            for l in result.get("listings", [])
+                            if l["stopped_reason"] != "empty_page")
+            print(f"  INCOMPLETE - cut off ({cut})")
+        if result.get("short_pages"):
+            print(f"  note: {result['short_pages']} of {result['pages_fetched']} pages came "
+                  f"back under {PAGE_SIZE} items after retries")
 
         dropped = result["unmatched_vendors"]
         if dropped:

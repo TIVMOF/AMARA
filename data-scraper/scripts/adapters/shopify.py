@@ -30,6 +30,11 @@ log = logging.getLogger(__name__)
 
 PAGE_SIZE = 250
 
+# How many times to re-request a page that comes back short. These stores
+# soft-throttle by serving fewer items instead of returning 429, so one short
+# response is not evidence that the catalogue has ended.
+PAGE_ATTEMPTS = 3
+
 # Tag values that name a gender. Shopify has no gender field, so the tag list
 # is the only place most stores state it.
 GENDER_TAGS = {
@@ -193,6 +198,33 @@ def _listing_urls(site: SiteConfig) -> list[tuple[str, str]]:
     return [("all", f"{base}/products.json")]
 
 
+def _fetch_page(fetcher: Fetcher, url: str, page: int) -> tuple[list[dict], bool]:
+    """Fetch one listing page, re-requesting it while it comes back short.
+
+    A short page is NOT proof that a catalogue has ended. These stores
+    soft-throttle by serving fewer items rather than returning 429, and because
+    paging is offset-based, silently accepting a short page also drops the
+    items it should have carried.
+
+    Returns (products, was_short). `was_short` means every attempt came back
+    under PAGE_SIZE with at least one item - the page is probably incomplete
+    and is recorded as such, rather than being taken as the end of the store.
+    """
+    best: list[dict] = []
+
+    for attempt in range(1, PAGE_ATTEMPTS + 1):
+        batch = (fetcher.get_json(f"{url}?limit={PAGE_SIZE}&page={page}") or {}).get("products") or []
+        if len(batch) > len(best):
+            best = batch
+        if len(best) == PAGE_SIZE:
+            return best, False
+        if attempt < PAGE_ATTEMPTS:
+            log.debug("    page %d returned %d/%d, re-requesting (%d/%d)",
+                      page, len(batch), PAGE_SIZE, attempt, PAGE_ATTEMPTS)
+
+    return best, bool(best)
+
+
 def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None) -> dict:
     """Page through a Shopify store and return matched products plus a report.
 
@@ -209,18 +241,28 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
     seen_ids: set[str] = set()
     unmatched: dict[str, int] = {}
     seen_raw = 0
+    listings: list[dict] = []
 
     for label, url in _listing_urls(site):
         page = 1
+        short_pages: list[int] = []
+        stopped = "empty_page"
+
         while True:
             if page_cap and page > page_cap:
                 log.info("  [%s/%s] page cap %d reached", site.name, label, page_cap)
+                stopped = "max_pages"
                 break
 
-            payload = fetcher.get_json(f"{url}?limit={PAGE_SIZE}&page={page}")
-            batch = (payload or {}).get("products") or []
+            batch, was_short = _fetch_page(fetcher, url, page)
             if not batch:
+                # The only signal that a catalogue has actually ended.
                 break
+            if was_short:
+                # Recorded rather than treated as the end - see issue #1.
+                short_pages.append(page)
+                log.warning("  [%s/%s] page %d short: %d/%d after %d attempts",
+                            site.name, label, page, len(batch), PAGE_SIZE, PAGE_ATTEMPTS)
 
             seen_raw += len(batch)
             for raw in batch:
@@ -251,10 +293,14 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
 
             log.info("  [%s/%s] page %d: %d raw, %d kept so far",
                      site.name, label, page, len(batch), len(products))
-
-            if len(batch) < PAGE_SIZE:
-                break
             page += 1
+
+        listings.append({
+            "label": label,
+            "pages_fetched": page - 1,
+            "stopped_reason": stopped,
+            "short_pages": short_pages,
+        })
 
     return {
         "products": products,
@@ -262,5 +308,14 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
         "currency": currency,
         "country": country,
         "seen_raw": seen_raw,
+        "pages_fetched": sum(l["pages_fetched"] for l in listings),
+        "short_pages": sum(len(l["short_pages"]) for l in listings),
+        # Complete is about termination only: every listing ran out of products
+        # on its own rather than being cut off. Short pages are reported
+        # separately - they are a caveat on density, not proof of truncation,
+        # and folding them in here would mark almost every crawl incomplete and
+        # make the flag worthless.
+        "complete": all(l["stopped_reason"] == "empty_page" for l in listings),
+        "listings": listings,
         "unmatched_vendors": dict(sorted(unmatched.items(), key=lambda kv: -kv[1])),
     }

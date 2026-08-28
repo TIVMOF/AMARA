@@ -70,10 +70,14 @@ class Fetcher:
 
         self._last_request_at = 0.0
         self.session = requests.Session()
+        # No Accept-Language on purpose. Some stores treat it as a request for
+        # a locale-filtered catalogue and silently serve fewer products -
+        # notre-shop drops from 249 to 142 per page. See issue #6. A site that
+        # genuinely needs a locale should say so in its own config, where the
+        # choice is visible.
         self.session.headers.update({
             "User-Agent": env("USER_AGENT"),
             "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "en-US,en;q=0.9",
         })
 
     def _throttle(self) -> None:
