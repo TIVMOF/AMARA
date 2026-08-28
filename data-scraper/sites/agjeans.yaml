@@ -1,0 +1,23 @@
+# AG Jeans
+# Discovered by: python -m scripts probe agjeans.com
+name: agjeans
+adapter: shopify
+base_url: https://www.agjeans.com
+
+currency: "USD"
+country: "US"
+rate_limit_rps: 0.5
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+collections: []
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+# Single-brand store: Shopify's `vendor` field here is not reliably the brand,
+# so it is set explicitly and every product is attributed to it.
+brand_override: "AG Jeans"
+
+enabled: true
+notes: "single-brand store"

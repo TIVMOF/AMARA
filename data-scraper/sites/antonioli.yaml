@@ -1,0 +1,19 @@
+# luxury multi-brand, Milan
+# Discovered by: python -m scripts probe antonioli.eu
+name: antonioli
+adapter: shopify
+base_url: https://www.antonioli.eu
+
+currency: "EUR"
+country: "IT"
+rate_limit_rps: 0.5
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+collections: []
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+enabled: true
+notes: "multi-brand retailer"
