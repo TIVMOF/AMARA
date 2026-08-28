@@ -20,7 +20,7 @@ import logging
 import re
 from datetime import datetime, timezone
 
-from ..fetch import Fetcher
+from ..fetch import Fetcher, FetchError
 from ..models.brand import BrandIndex
 from ..models.product import Product
 from ..models.site_config import SiteConfig
@@ -34,6 +34,11 @@ PAGE_SIZE = 250
 # soft-throttle by serving fewer items instead of returning 429, so one short
 # response is not evidence that the catalogue has ended.
 PAGE_ATTEMPTS = 3
+
+# Shopify stops paging products.json here - page 101 answers HTTP 400. That is
+# a ceiling of MAX_PAGE * PAGE_SIZE products per listing endpoint, and it is
+# the normal end of a large catalogue rather than a fault. See issue #3.
+MAX_PAGE = 100
 
 # Tag values that name a gender. Shopify has no gender field, so the tag list
 # is the only place most stores state it.
@@ -186,7 +191,12 @@ def _shop_meta(fetcher: Fetcher, site: SiteConfig) -> tuple[str | None, str | No
     """
     if site.currency and site.country:
         return site.currency, site.country
-    meta = fetcher.get_json(f"{site.base_url.rstrip('/')}/meta.json", allow_404=True) or {}
+    try:
+        meta = fetcher.get_json(f"{site.base_url.rstrip('/')}/meta.json", allow_404=True) or {}
+    except FetchError as exc:
+        # Worth a null currency, not worth losing the crawl - see issue #2.
+        log.warning("  [%s] /meta.json unavailable (%s); currency will be null", site.name, exc)
+        meta = {}
     return site.currency or meta.get("currency"), site.country or meta.get("country")
 
 
@@ -242,6 +252,7 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
     unmatched: dict[str, int] = {}
     seen_raw = 0
     listings: list[dict] = []
+    errors: list[dict] = []
 
     for label, url in _listing_urls(site):
         page = 1
@@ -254,7 +265,32 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                 stopped = "max_pages"
                 break
 
-            batch, was_short = _fetch_page(fetcher, url, page)
+            if page > MAX_PAGE:
+                # Reached before asking for the page that would 400, so the
+                # request is never wasted.
+                log.info("  [%s/%s] Shopify page ceiling (%d) reached - catalogue "
+                         "continues past it, shard by collection to go deeper",
+                         site.name, label, MAX_PAGE)
+                stopped = "page_ceiling"
+                break
+
+            try:
+                batch, was_short = _fetch_page(fetcher, url, page)
+            except FetchError as exc:
+                # Whatever has been collected so far is kept and written, rather
+                # than thrown away with the site - see issue #2.
+                if "HTTP 400" in str(exc) and page > 1:
+                    # A store capping paging below MAX_PAGE. End of listing,
+                    # not a fault.
+                    log.info("  [%s/%s] listing ends at page %d (HTTP 400)",
+                             site.name, label, page - 1)
+                    stopped = "page_ceiling"
+                else:
+                    log.warning("  [%s/%s] stopping at page %d: %s", site.name, label, page, exc)
+                    stopped = "error"
+                    errors.append({"listing": label, "page": page, "error": str(exc)})
+                break
+
             if not batch:
                 # The only signal that a catalogue has actually ended.
                 break
@@ -316,6 +352,7 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
         # and folding them in here would mark almost every crawl incomplete and
         # make the flag worthless.
         "complete": all(l["stopped_reason"] == "empty_page" for l in listings),
+        "errors": errors,
         "listings": listings,
         "unmatched_vendors": dict(sorted(unmatched.items(), key=lambda kv: -kv[1])),
     }
