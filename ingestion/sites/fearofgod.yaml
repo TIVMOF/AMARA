@@ -1,0 +1,22 @@
+# Fear of God incl. ESSENTIALS line
+# Discovered by: python -m scripts probe fearofgod.com
+name: fearofgod
+adapter: shopify
+base_url: https://www.fearofgod.com
+
+currency: "USD"
+country: "US"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+collections: []
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+# Single-brand store: Shopify's `vendor` field here is not reliably the brand,
+# so it is set explicitly and every product is attributed to it.
+brand_override: "Fear of God"
+
+enabled: true
+notes: "single-brand store"

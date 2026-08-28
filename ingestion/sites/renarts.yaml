@@ -1,0 +1,25 @@
+# sneakers + streetwear
+# Discovered by: python -m scripts probe renarts.com
+name: renarts
+adapter: shopify
+base_url: https://www.renarts.com
+
+currency: "USD"
+country: "US"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+# `python -m scripts collections renarts` lists these, largest first.
+collections: []
+
+# Not about the page ceiling - renarts never reaches it. Its unfiltered
+# /products.json exposes only 249 products, while its collections between them
+# expose 1,975. Sharding is the only way to see the rest. See issue #5.
+discover_collections: true
+max_collections: 15
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+enabled: true
+notes: "multi-brand retailer"

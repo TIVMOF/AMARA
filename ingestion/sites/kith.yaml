@@ -1,0 +1,18 @@
+# Kith own label plus Nike/Jordan/ASICS
+# Discovered by: python -m scripts probe kith.com
+name: kith
+adapter: shopify
+base_url: https://kith.com
+
+currency: "USD"
+country: "US"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+collections: []
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+enabled: true
+notes: "multi-brand retailer"
