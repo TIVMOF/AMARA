@@ -77,7 +77,8 @@ groups:
   - segment: Luxury House
     tier: Luxury
     styles: [Classic]
-    brands: [Giorgio Armani, Tom Ford, Berluti, Tod's, Church's, Thom Browne]
+    brands: [Giorgio Armani, Tom Ford, Berluti, Tod's, Church's, Thom Browne,
+             Lanvin, Hogan]
 
   - segment: Luxury House
     tier: Luxury
@@ -90,7 +91,9 @@ groups:
     styles: [Glamour]
     brands: [Versace, Dolce & Gabbana, Valentino, Schiaparelli, Fendi, Givenchy,
              Alaïa, Christian Louboutin, Jimmy Choo, Manolo Blahnik,
-             Gianvito Rossi, Sergio Rossi, Giuseppe Zanotti]
+             Gianvito Rossi, Sergio Rossi, Giuseppe Zanotti,
+             Balmain, Missoni, Pucci, Aquazzura, Amina Muaddi,
+             René Caovilla, MACH & MACH]
 
   - segment: Luxury House
     tier: Luxury
@@ -105,7 +108,7 @@ groups:
   - segment: Luxury House
     tier: Luxury
     styles: [Avant-Garde]
-    brands: [Alexander McQueen, Maison Margiela, JW Anderson]
+    brands: [Alexander McQueen, Maison Margiela, JW Anderson, Rabanne]
 
   - segment: Luxury House
     tier: Luxury
@@ -120,7 +123,7 @@ groups:
              Noir Kei Ninomiya, Rick Owens, Rick Owens DRKSHDW,
              Ann Demeulemeester, Homme Plissé Issey Miyake,
              Maison Mihara Yasuhiro, Enfants Riches Déprimés, Dries Van Noten,
-             Vivienne Westwood, Marni]
+             Vivienne Westwood, Marni, visvim]
 
   - segment: Designer
     tier: Luxury
@@ -135,12 +138,13 @@ groups:
   - segment: Designer
     tier: Luxury
     styles: [Glamour]
-    brands: [Etro, Zimmermann, Victoria Beckham, SIMKHAI, Rebecca Vallance]
+    brands: [Etro, Zimmermann, Victoria Beckham, SIMKHAI, Rebecca Vallance,
+             The Attico, Johanna Ortiz]
 
   - segment: Designer
     tier: Luxury
     styles: [Feminine]
-    brands: [Christopher Esber, SHUSHU/TONG, Pauline Dujancourt]
+    brands: [Christopher Esber, SHUSHU/TONG, Pauline Dujancourt, Cecilie Bahnsen]
 
   - segment: Designer
     tier: Luxury
@@ -166,7 +170,8 @@ groups:
   - segment: Designer
     tier: Premium
     styles: [Street]
-    brands: [Casablanca, Drôle De Monsieur, Marine Serre, Willy Chavarria, Kenzo]
+    brands: [Casablanca, Drôle De Monsieur, Marine Serre, Willy Chavarria, Kenzo,
+             Alexander Wang, R13]
 
   - segment: Designer
     tier: Premium
@@ -204,17 +209,29 @@ groups:
     styles: [Minimalist]
     # Destin's "Knitwear" is dropped for the same reason `Footwear` is not a
     # segment - what a brand makes lands in the product's `category`.
-    brands: [Destin, Róhe, Nanushka, The Frankie Shop]
+    brands: [Destin, Róhe, Nanushka, The Frankie Shop, Simon Miller, St. Agni,
+             Aya Muse, Matteau, A.EMERY, Aeyde, BY FAR, DeMellier, JW Pei,
+             Tom Wood, NN07, Soft Goat]
 
   - segment: Contemporary Designer
     tier: Premium
     styles: [Casual]
-    brands: [Maison Kitsuné, Ganni]
+    brands: [Maison Kitsuné, Ganni, FARM Rio, Déhanche]
+
+  - segment: Contemporary Designer
+    tier: Premium
+    styles: [Glamour]
+    brands: [Paris Texas, Norma Kamali, ROTATE Birger Christensen, Retrofete]
+
+  - segment: Contemporary Designer
+    tier: Premium
+    styles: [Heritage]
+    brands: [Ancient Greek Sandals, Castañer]
 
   - segment: Contemporary Designer
     tier: Premium
     styles: [Feminine]
-    brands: [Self-Portrait, Soeur, Cult Gaia]
+    brands: [Self-Portrait, Soeur, Cult Gaia, DÔEN, Faithfull, Posse]
 
   # ── Streetwear ─────────────────────────────────────────────────────────────
   - segment: Streetwear
@@ -342,6 +359,9 @@ aliases:
   Saint Laurent: [Yves Saint Laurent, Saint Laurent Paris, YSL]
   Alexander McQueen: [McQueen]
   Valentino: [Valentino Garavani]
+  Gucci: [Gucci Eyewear]
+  Moncler: [Moncler Grenoble]
+  ROTATE Birger Christensen: [ROTATE BIRGER CHRISTENSEN, Rotate]
   Jordan: [Air Jordan, Jordan Brand]
   Adidas: [adidas Originals, Y-3, Adidas Y-3, adidas Performance]
   Nike: [Nike Sportswear, NikeLab, Nike SB]
