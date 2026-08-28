@@ -474,6 +474,12 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
         # make the flag worthless.
         "complete": all(l["stopped_reason"] == "empty_page" for l in listings),
         "errors": errors,
+        # Whether the host pushed back, and what the rate ended up at. A crawl
+        # that was slowed is still trustworthy; one that was slowed a lot is a
+        # sign the configured rate is wrong for this store. See issue #10.
+        "throttled": fetcher.throttled,
+        "rate_limit_final": round(1 / fetcher.min_interval, 2) if fetcher.min_interval else None,
+        "rate_limit_start": round(1 / fetcher.min_interval_initial, 2) if fetcher.min_interval_initial else None,
         "raw_pages": raw_pages,
         "listings": listings,
         "unmatched_vendors": dict(sorted(unmatched.items(), key=lambda kv: -kv[1])),

@@ -94,6 +94,9 @@ def build_normalized(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]
         # Non-empty when a listing stopped on a failed request. The products
         # gathered before it are still here - see issue #2.
         "errors": result.get("errors", []),
+        "throttled": result.get("throttled", 0),
+        "rate_limit_start": result.get("rate_limit_start"),
+        "rate_limit_final": result.get("rate_limit_final"),
 
         "collections_crawled": result.get("collections_crawled", 0),
         "products_seen": result.get("seen_raw", 0),

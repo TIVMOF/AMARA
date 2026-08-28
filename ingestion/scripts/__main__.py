@@ -79,6 +79,10 @@ def run_crawl(args: argparse.Namespace) -> int:
                 print(f"  INCOMPLETE [{listing['label']}] - stopped by a failed request; "
                       f"everything collected before it was still written")
 
+        if result.get("throttled"):
+            print(f"  throttled {result['throttled']}x - rate backed off from "
+                  f"{result['rate_limit_start']}/s to {result['rate_limit_final']}/s")
+
         for err in result.get("errors", []):
             print(f"    error on page {err['page']}: {err['error']}")
             failures += 1
