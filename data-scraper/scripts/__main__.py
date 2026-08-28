@@ -20,7 +20,7 @@ import sys
 
 from . import normalize, registry
 from .fetch import ConfigError, FetchError, Fetcher
-from .adapters.shopify import PAGE_SIZE
+from .adapters.shopify import MAX_PAGE as PAGE_CEILING, PAGE_SIZE
 from .probe import probe, suggest_yaml
 
 
@@ -60,11 +60,21 @@ def run_crawl(args: argparse.Namespace) -> int:
         pct = (kept / seen * 100) if seen else 0
         print(f"  kept {kept} of {seen} products ({pct:.0f}%) -> {path.relative_to(normalize.ROOT)}")
 
-        if not result.get("complete"):
-            cut = ", ".join(f"{l['label']}: {l['stopped_reason']}"
-                            for l in result.get("listings", [])
-                            if l["stopped_reason"] != "empty_page")
-            print(f"  INCOMPLETE - cut off ({cut})")
+        for listing in result.get("listings", []):
+            reason = listing["stopped_reason"]
+            if reason == "page_ceiling":
+                print(f"  INCOMPLETE [{listing['label']}] - hit Shopify's {PAGE_CEILING}-page "
+                      f"ceiling; this catalogue continues past {PAGE_CEILING * PAGE_SIZE:,} "
+                      f"products. Shard by collection to reach the rest (see #5).")
+            elif reason == "max_pages":
+                print(f"  INCOMPLETE [{listing['label']}] - stopped at --max-pages")
+            elif reason == "error":
+                print(f"  INCOMPLETE [{listing['label']}] - stopped by a failed request; "
+                      f"everything collected before it was still written")
+
+        for err in result.get("errors", []):
+            print(f"    error on page {err['page']}: {err['error']}")
+            failures += 1
         if result.get("short_pages"):
             print(f"  note: {result['short_pages']} of {result['pages_fetched']} pages came "
                   f"back under {PAGE_SIZE} items after retries")

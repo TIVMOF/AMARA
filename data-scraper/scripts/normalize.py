@@ -48,6 +48,9 @@ def build_envelope(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]:
         "pages_fetched": result.get("pages_fetched"),
         "short_pages": result.get("short_pages"),
         "listings": result.get("listings", []),
+        # Non-empty when a listing stopped on a failed request. The products
+        # gathered before it are still here - see issue #2.
+        "errors": result.get("errors", []),
 
         "products_seen": result.get("seen_raw", 0),
         "products_kept": len(products),
