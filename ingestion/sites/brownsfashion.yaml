@@ -1,0 +1,25 @@
+# luxury multi-brand, London
+# Discovered by: python -m scripts probe brownsfashion.com
+name: brownsfashion
+adapter: shopify
+base_url: https://www.brownsfashion.com
+
+currency: "GBP"
+country: "GB"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl -
+# `python -m scripts collections brownsfashion` lists them, largest first.
+collections: []
+
+# This catalogue is larger than the 25,000 an unfiltered /products.json can
+# reach, so shard across collections instead. 2,700 are non-empty and they
+# overlap heavily, so the largest 40 cover the store for a fraction of the
+# ~3,500 requests crawling all of them would cost. See issue #5.
+discover_collections: true
+max_collections: 40
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+enabled: true
+notes: "multi-brand retailer"

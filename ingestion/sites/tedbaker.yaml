@@ -1,0 +1,22 @@
+# Ted Baker; vendor field holds licensees
+# Discovered by: python -m scripts probe tedbaker.com
+name: tedbaker
+adapter: shopify
+base_url: https://www.tedbaker.com
+
+currency: "USD"
+country: "US"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+collections: []
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+# Single-brand store: Shopify's `vendor` field here is not reliably the brand,
+# so it is set explicitly and every product is attributed to it.
+brand_override: "Ted Baker"
+
+enabled: true
+notes: "single-brand store"

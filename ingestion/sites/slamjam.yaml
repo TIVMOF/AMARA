@@ -1,0 +1,18 @@
+# streetwear, Italy
+# Discovered by: python -m scripts probe slamjam.com
+name: slamjam
+adapter: shopify
+base_url: https://www.slamjam.com
+
+currency: "EUR"
+country: "IT"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
+# e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
+collections: []
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+enabled: true
+notes: "multi-brand retailer"

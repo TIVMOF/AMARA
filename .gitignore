@@ -1,8 +1,8 @@
-data-scraper/data/
+ingestion/data/
 
 # secrets / local config
 .env
-data-scraper/.env
+ingestion/.env
 
 # python
 __pycache__/
