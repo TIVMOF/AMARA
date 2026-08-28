@@ -290,22 +290,31 @@ def _listing_targets(fetcher: Fetcher, site: SiteConfig) -> list[tuple[str, str]
     An unfiltered /products.json cannot reach past MAX_PAGE * PAGE_SIZE
     products. Collection-scoped endpoints each get their own page budget, which
     is the only way past that ceiling - see issue #5.
+
+    Collections are additional shards, never a replacement. The unfiltered
+    listing is always crawled: it is the only target guaranteed to reach a
+    product that belongs to no collection, or to one outside the largest
+    max_collections. bdgastore lost 874 products to the earlier either/or -
+    see issue #12. Dedupe by product id makes the union a superset by
+    construction.
     """
     base = site.base_url.rstrip("/")
+    targets = [("all", f"{base}/products.json")]
 
     if site.collections:
-        handles = site.collections
+        handles = list(site.collections)
     elif site.discover_collections:
         discovered = discover_collections(fetcher, site)
         handles = [c["handle"] for c in discovered[:site.max_collections]]
         if len(discovered) > site.max_collections:
-            log.info("  [%s] crawling the largest %d of %d (max_collections); they overlap "
-                     "heavily, so the tail adds little",
+            log.info("  [%s] crawling the unfiltered listing plus the largest %d of %d "
+                     "collections (max_collections)",
                      site.name, site.max_collections, len(discovered))
     else:
-        return [("all", f"{base}/products.json")]
+        return targets
 
-    return [(h, f"{base}/collections/{h}/products.json") for h in handles]
+    targets += [(h, f"{base}/collections/{h}/products.json") for h in handles]
+    return targets
 
 
 def _fetch_page(fetcher: Fetcher, url: str, page: int,
@@ -464,7 +473,7 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
         # Collections overlap, so seen_raw double-counts. seen_unique is how
         # many distinct products the crawl actually laid eyes on.
         "seen_unique": len(seen_ids),
-        "collections_crawled": len(listings) if listings and listings[0]["label"] != "all" else 0,
+        "collections_crawled": sum(1 for l in listings if l["label"] != "all"),
         "pages_fetched": sum(l["pages_fetched"] for l in listings),
         "short_pages": sum(len(l["short_pages"]) for l in listings),
         # Complete is about termination only: every listing ran out of products
