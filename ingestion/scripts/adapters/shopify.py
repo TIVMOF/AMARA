@@ -519,7 +519,11 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                      site.name, label, page, len(batch), len(products))
             page += 1
 
-        if stopped == "page_ceiling":
+        # Only a truncated *shard* argues for more shards. The unfiltered
+        # listing's own ceiling is what triggered sharding in the first place
+        # and can never be resolved by digging, so counting it would send every
+        # sharded store to the page budget whether or not it needed to go.
+        if stopped == "page_ceiling" and label != UNFILTERED_LABEL:
             ceilings += 1
         if label == UNFILTERED_LABEL and stopped == "empty_page":
             unfiltered_complete = True
