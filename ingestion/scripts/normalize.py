@@ -46,21 +46,31 @@ def _write(path: Path, payload: dict[str, Any]) -> Path:
 # ── raw layer ──────────────────────────────────────────────────────────────────
 
 def build_raw(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]:
-    """Response bodies exactly as received, with enough context to replay them.
+    """Product bodies exactly as received, plus the trace of what carried them.
 
-    Nothing here is filtered, deduplicated or reshaped - products dropped by the
-    brand allowlist are present, and so are products that appear in more than
-    one collection.
+    Nothing here is filtered or reshaped - products dropped by the brand
+    allowlist are present, and every body is byte-for-byte what the store sent.
+
+    Bodies are keyed by product id and stored once. Collections overlap by
+    design, so writing each response whole meant storing the same product up to
+    fourteen times: 1.7M bodies for 284K products, 16 GB of raw against 883 MB
+    of normalized. `responses` keeps the full page-by-page trace as id lists,
+    which is what the attribution is actually needed for. See issue #15.
     """
     pages = result.get("raw_pages", [])
+    products = result.get("raw_products", {})
     return {
         "site": site.name,
         "adapter": site.adapter,
         "base_url": site.base_url,
         "scraped_at": result["scraped_at"],
         "pages": len(pages),
+        # Deliveries, counting a product once per page that carried it.
         "products_received": sum(p["count"] for p in pages),
+        # Distinct bodies actually written.
+        "products_stored": len(products),
         "responses": pages,
+        "products": products,
     }
 
 
@@ -94,6 +104,9 @@ def build_normalized(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]
         # Non-empty when a listing stopped on a failed request. The products
         # gathered before it are still here - see issue #2.
         "errors": result.get("errors", []),
+        "throttled": result.get("throttled", 0),
+        "rate_limit_start": result.get("rate_limit_start"),
+        "rate_limit_final": result.get("rate_limit_final"),
 
         "collections_crawled": result.get("collections_crawled", 0),
         "products_seen": result.get("seen_raw", 0),
@@ -112,7 +125,7 @@ def write(site: SiteConfig, result: dict[str, Any]) -> tuple[Path, Path | None]:
     normalized_path = _write(NORMALIZED_DIR / site.name / f"{stamp}.json",
                              build_normalized(site, result))
     raw_path = None
-    if result.get("raw_pages"):
+    if result.get("raw_products"):
         raw_path = _write(RAW_DIR / site.name / f"{stamp}.json", build_raw(site, result))
     return normalized_path, raw_path
 

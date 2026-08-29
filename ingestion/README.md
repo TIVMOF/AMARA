@@ -60,9 +60,14 @@ brands.yaml   ──┘                          │
 Two layers per crawl, paired by timestamp:
 
 ```
-data/raw/<site>/<timestamp>.json         every response body, untouched
+data/raw/<site>/<timestamp>.json         every product body, untouched
 data/normalized/<site>/<timestamp>.json  the AMARA record shape
 ```
+
+Raw keys product bodies by id and stores each one once, with `responses`
+holding the page-by-page trace as id lists. Collections overlap by design, so
+storing whole response bodies meant writing the same product up to fourteen
+times - 1.7M bodies for 284K products. See issue #15.
 
 ### Why raw exists
 

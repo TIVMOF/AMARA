@@ -10,6 +10,12 @@ country: "SE"
 # Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
 # e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
 collections: []
+# Permission to shard across collections, used only if the unfiltered
+# /products.json truncates - it stops at 25,000 products, and collection
+# endpoints each get their own page budget. Decided at run time, so a store
+# whose listing ends on its own is never sharded. See issues #5 and #16.
+discover_collections: true
+max_collections: 40
 
 # Stop after N pages per collection. null = until the store runs out.
 max_pages: null
