@@ -72,7 +72,7 @@ def run_crawl(args: argparse.Namespace) -> int:
             if reason == "page_ceiling":
                 print(f"  INCOMPLETE [{listing['label']}] - hit Shopify's {PAGE_CEILING}-page "
                       f"ceiling; this catalogue continues past {PAGE_CEILING * PAGE_SIZE:,} "
-                      f"products. Shard by collection to reach the rest (see #5).")
+                      f"products. Sharded by collection to reach past it (see #5).")
             elif reason == "max_pages":
                 print(f"  INCOMPLETE [{listing['label']}] - stopped at --max-pages")
             elif reason == "error":

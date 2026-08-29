@@ -296,46 +296,47 @@ def discover_collections(fetcher: Fetcher, site: SiteConfig) -> list[dict]:
     return non_empty
 
 
-def _listing_targets(fetcher: Fetcher, site: SiteConfig) -> list[tuple[str, str]]:
-    """(label, base URL) pairs to page through.
+def _initial_targets(site: SiteConfig) -> tuple[list[tuple[str, str]], int]:
+    """What to crawl before the store has told us anything.
+
+    Always the unfiltered listing, plus any collections named outright in the
+    site config - a hand-picked list is a deliberate instruction, not a guess.
+    Discovered collections are NOT included: whether this store needs them at
+    all is decided from what the unfiltered listing does. See issue #16.
+    """
+    base = site.base_url.rstrip("/")
+    targets = [(UNFILTERED_LABEL, f"{base}/products.json")]
+    targets += [(h, f"{base}/collections/{h}/products.json") for h in site.collections]
+    return targets, len(targets)
+
+
+def _shard_targets(fetcher: Fetcher, site: SiteConfig) -> tuple[list[tuple[str, str]], int]:
+    """Collections to shard by, once the unfiltered listing has proved it needs them.
 
     An unfiltered /products.json cannot reach past MAX_PAGE * PAGE_SIZE
     products. Collection-scoped endpoints each get their own page budget, which
     is the only way past that ceiling - see issue #5.
 
     Collections are additional shards, never a replacement. The unfiltered
-    listing is always crawled: it is the only target guaranteed to reach a
-    product that belongs to no collection, or to one outside the largest
-    max_collections. bdgastore lost 874 products to the earlier either/or -
-    see issue #12. Dedupe by product id makes the union a superset by
-    construction.
+    listing is crawled first and kept: it is the only target guaranteed to
+    reach a product that belongs to no collection, or to one outside the
+    largest max_collections. bdgastore lost 874 products to the earlier
+    either/or - see issue #12. Dedupe by product id makes the union a superset
+    by construction.
 
-    Returns (targets, guaranteed) where the first `guaranteed` targets are
-    always crawled and the rest are the long tail, entered only if something
-    truncated - see issue #14.
+    Returns (targets, guaranteed): the first `guaranteed` are crawled outright,
+    the rest are the long tail entered only if something truncates - issue #14.
     """
     base = site.base_url.rstrip("/")
-    targets = [(UNFILTERED_LABEL, f"{base}/products.json")]
-
-    if site.collections:
-        # Hand-picked in the site config, so all of them are crawled: the cap
-        # exists to bound discovery, not to second-guess a deliberate list.
-        handles = list(site.collections)
-        targets += [(h, f"{base}/collections/{h}/products.json") for h in handles]
-        return targets, len(targets)
-    if site.discover_collections:
-        discovered = discover_collections(fetcher, site)
-        handles = [c["handle"] for c in discovered[:DEEP_MAX_COLLECTIONS]]
-        if len(discovered) > site.max_collections:
-            log.info("  [%s] crawling the unfiltered listing plus the largest %d of %d "
-                     "collections, and up to %d more if any of them truncates",
-                     site.name, site.max_collections, len(discovered),
-                     min(len(discovered), DEEP_MAX_COLLECTIONS) - site.max_collections)
-    else:
-        return targets, len(targets)
-
-    targets += [(h, f"{base}/collections/{h}/products.json") for h in handles]
-    return targets, 1 + min(len(handles), site.max_collections)
+    discovered = discover_collections(fetcher, site)
+    handles = [c["handle"] for c in discovered[:DEEP_MAX_COLLECTIONS]]
+    if len(discovered) > site.max_collections:
+        log.info("  [%s] sharding by the largest %d of %d collections, and up to "
+                 "%d more if any of them truncates",
+                 site.name, site.max_collections, len(discovered),
+                 min(len(discovered), DEEP_MAX_COLLECTIONS) - site.max_collections)
+    targets = [(h, f"{base}/collections/{h}/products.json") for h in handles]
+    return targets, min(len(handles), site.max_collections)
 
 
 def _fetch_page(fetcher: Fetcher, url: str, page: int,
@@ -395,12 +396,16 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
     # #12 and #13 survives at a fraction of the size.
     raw_pages: list[dict] = []
 
-    targets, guaranteed = _listing_targets(fetcher, site)
+    targets, guaranteed = _initial_targets(site)
     unfiltered_complete = False
+    sharded = False
     ceilings = 0
     skipped = 0
 
-    for index, (label, url) in enumerate(targets):
+    index = -1
+    while index + 1 < len(targets):
+        index += 1
+        label, url = targets[index]
         # `/collections/all` is the whole catalogue in a different order. Once
         # the unfiltered listing has ended on its own it has already seen every
         # product, so this is a straight duplicate - but when it truncated, the
@@ -525,6 +530,24 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
             "stopped_reason": stopped,
             "short_pages": short_pages,
         })
+
+        # The sharding decision, made from what the store just did rather than
+        # from config - see issue #16. A listing that ran out of products on
+        # its own has shown the whole catalogue, and collections can only
+        # re-deliver what is already held. One that hit the ceiling, or failed,
+        # has not, and collections are the only way past it.
+        if label == UNFILTERED_LABEL and not sharded and site.discover_collections:
+            sharded = True
+            if stopped in ("page_ceiling", "error"):
+                log.info("  [%s] unfiltered listing stopped on %s at %d products - "
+                         "sharding by collection to reach the rest",
+                         site.name, stopped, len(seen_ids))
+                shards, allowed = _shard_targets(fetcher, site)
+                targets += shards
+                guaranteed += allowed
+            elif stopped == "empty_page":
+                log.info("  [%s] unfiltered listing ended on its own at %d products; "
+                         "no sharding needed", site.name, len(seen_ids))
 
     return {
         "products": products,

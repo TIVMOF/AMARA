@@ -21,11 +21,14 @@ class SiteConfig:
     # Empty = whole catalogue. Otherwise only these Shopify collection handles.
     collections: list[str] = field(default_factory=list)
 
-    # Shopify serves at most 100 pages per listing endpoint, so an unfiltered
-    # /products.json cannot reach past 25,000 products. Setting this crawls the
-    # store's collections instead, each of which gets its own page budget.
-    # Ignored when `collections` is set explicitly.
-    discover_collections: bool = False
+    # Permission to shard, not an instruction to. Shopify serves at most 100
+    # pages per listing endpoint, so an unfiltered /products.json cannot reach
+    # past 25,000 products; collection endpoints each get their own budget and
+    # are the only way past that. Whether a store actually needs them is
+    # decided at run time from what its unfiltered listing does - 16 of 21
+    # retailers gained nothing from sharding and paid 10x the requests for it
+    # (issue #16). Set false to forbid sharding a store outright.
+    discover_collections: bool = True
 
     # How many discovered collections to crawl, largest first. Browns publishes
     # 2,700 non-empty collections; crawling them all is ~3,500 requests for a

@@ -10,10 +10,10 @@ country: "IT"
 # Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
 # e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
 collections: []
-# Shard across collections. The unfiltered /products.json is not a reliable
-# view of a store - renarts serves 249 unfiltered against 1,975 across its
-# collections - and it stops at 25,000 regardless. Collection-scoped endpoints
-# each get their own page budget. See issue #5.
+# Permission to shard across collections, used only if the unfiltered
+# /products.json truncates - it stops at 25,000 products, and collection
+# endpoints each get their own page budget. Decided at run time, so a store
+# whose listing ends on its own is never sharded. See issues #5 and #16.
 discover_collections: true
 max_collections: 40
 

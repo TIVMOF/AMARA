@@ -12,9 +12,11 @@ country: "US"
 # `python -m scripts collections renarts` lists these, largest first.
 collections: []
 
-# Not about the page ceiling - renarts never reaches it. Its unfiltered
-# /products.json exposes only 249 products, while its collections between them
-# expose 1,975. Sharding is the only way to see the rest. See issue #5.
+# Permission only; renarts will not use it. Its unfiltered /products.json
+# serves the whole catalogue - 1,975 products over 9 pages - and page 1 of its
+# largest collection holds nothing that listing missed. The 249 this file used
+# to claim was the short-page bug in #1 reading a 241-item page 2 as the end of
+# the store. See issues #1 and #16.
 discover_collections: true
 max_collections: 15
 
