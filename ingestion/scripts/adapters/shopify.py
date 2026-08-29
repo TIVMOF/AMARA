@@ -40,6 +40,22 @@ PAGE_ATTEMPTS = 3
 # the normal end of a large catalogue rather than a fault. See issue #3.
 MAX_PAGE = 100
 
+# The unfiltered listing needs a label that a Shopify collection handle cannot
+# take. Handles are [a-z0-9-]+, so the asterisks make a collision impossible.
+# Nine of 21 stores publish a real collection called `all`, which used to share
+# this label and made per-listing diagnostics ambiguous - see issue #13.
+UNFILTERED_LABEL = "*unfiltered*"
+
+# Collection discovery sorts largest-first, and the largest collections are the
+# catch-alls that hit MAX_PAGE. When that happens the crawl keeps walking down
+# the list, where collections are small enough to complete. Stores that finish
+# cleanly never reach past site.max_collections. See issue #14.
+DEEP_MAX_COLLECTIONS = 400
+
+# Hard stop on a single site, so a store with 3,000 collections cannot run
+# unbounded. Only ever reached by a store that is already truncating.
+PAGE_BUDGET = 4000
+
 # Tag values that name a gender. Shopify has no gender field, so the tag list
 # is the only place most stores state it.
 GENDER_TAGS = {
@@ -193,35 +209,31 @@ def from_raw(raw: dict, site: SiteConfig, brands: BrandIndex) -> dict:
     products: list[Product] = []
     seen_ids: set[str] = set()
     unmatched: dict[str, int] = {}
-    seen_raw = 0
 
     stub = SiteConfig(name=raw["site"], adapter=raw["adapter"], base_url=raw["base_url"],
                       brand_override=site.brand_override)
 
-    for response in raw.get("responses", []):
-        batch = (response.get("payload") or {}).get("products") or []
-        seen_raw += len(batch)
-        for item in batch:
-            product_id = str(item.get("id"))
-            if product_id in seen_ids:
+    # Bodies are already unique by id (issue #15), so there is nothing to
+    # deduplicate here; `responses` carries only the page trace.
+    seen_raw = raw.get("products_received", 0)
+    for product_id, item in (raw.get("products") or {}).items():
+        seen_ids.add(product_id)
+
+        vendor = item.get("vendor")
+        if stub.brand_override:
+            brand_name = stub.brand_override
+            hit = brands.match(stub.brand_override)
+        else:
+            hit = brands.match(vendor)
+            if not hit:
+                if vendor:
+                    unmatched[vendor] = unmatched.get(vendor, 0) + 1
                 continue
-            seen_ids.add(product_id)
+            brand_name = vendor
 
-            vendor = item.get("vendor")
-            if stub.brand_override:
-                brand_name = stub.brand_override
-                hit = brands.match(stub.brand_override)
-            else:
-                hit = brands.match(vendor)
-                if not hit:
-                    if vendor:
-                        unmatched[vendor] = unmatched.get(vendor, 0) + 1
-                    continue
-                brand_name = vendor
-
-            taxonomy = (hit.segment, hit.tier, hit.styles) if hit else (None, None, [])
-            products.append(to_product(item, stub, brand=brand_name, taxonomy=taxonomy,
-                                       currency=site.currency, scraped_at=scraped_at))
+        taxonomy = (hit.segment, hit.tier, hit.styles) if hit else (None, None, [])
+        products.append(to_product(item, stub, brand=brand_name, taxonomy=taxonomy,
+                                   currency=site.currency, scraped_at=scraped_at))
 
     return {
         "products": products,
@@ -271,7 +283,7 @@ def discover_collections(fetcher: Fetcher, site: SiteConfig) -> list[dict]:
     found: list[dict] = []
     page = 1
     while page <= MAX_PAGE:
-        batch, _, _ = _fetch_page(fetcher, f"{base}/collections.json", page, key="collections")
+        batch, _ = _fetch_page(fetcher, f"{base}/collections.json", page, key="collections")
         if not batch:
             break
         found.extend(batch)
@@ -297,28 +309,37 @@ def _listing_targets(fetcher: Fetcher, site: SiteConfig) -> list[tuple[str, str]
     max_collections. bdgastore lost 874 products to the earlier either/or -
     see issue #12. Dedupe by product id makes the union a superset by
     construction.
+
+    Returns (targets, guaranteed) where the first `guaranteed` targets are
+    always crawled and the rest are the long tail, entered only if something
+    truncated - see issue #14.
     """
     base = site.base_url.rstrip("/")
-    targets = [("all", f"{base}/products.json")]
+    targets = [(UNFILTERED_LABEL, f"{base}/products.json")]
 
     if site.collections:
+        # Hand-picked in the site config, so all of them are crawled: the cap
+        # exists to bound discovery, not to second-guess a deliberate list.
         handles = list(site.collections)
-    elif site.discover_collections:
+        targets += [(h, f"{base}/collections/{h}/products.json") for h in handles]
+        return targets, len(targets)
+    if site.discover_collections:
         discovered = discover_collections(fetcher, site)
-        handles = [c["handle"] for c in discovered[:site.max_collections]]
+        handles = [c["handle"] for c in discovered[:DEEP_MAX_COLLECTIONS]]
         if len(discovered) > site.max_collections:
             log.info("  [%s] crawling the unfiltered listing plus the largest %d of %d "
-                     "collections (max_collections)",
-                     site.name, site.max_collections, len(discovered))
+                     "collections, and up to %d more if any of them truncates",
+                     site.name, site.max_collections, len(discovered),
+                     min(len(discovered), DEEP_MAX_COLLECTIONS) - site.max_collections)
     else:
-        return targets
+        return targets, len(targets)
 
     targets += [(h, f"{base}/collections/{h}/products.json") for h in handles]
-    return targets
+    return targets, 1 + min(len(handles), site.max_collections)
 
 
 def _fetch_page(fetcher: Fetcher, url: str, page: int,
-                *, key: str = "products") -> tuple[list[dict], bool, dict]:
+                *, key: str = "products") -> tuple[list[dict], bool]:
     """Fetch one listing page, re-requesting it while it comes back short.
 
     A short page is NOT proof that a catalogue has ended. These stores
@@ -326,27 +347,25 @@ def _fetch_page(fetcher: Fetcher, url: str, page: int,
     paging is offset-based, silently accepting a short page also drops the
     items it should have carried.
 
-    Returns (items, was_short, payload). `was_short` means every attempt came
-    back under PAGE_SIZE with at least one item - the page is probably
-    incomplete and is recorded as such, rather than being taken as the end of
-    the store. `payload` is the response body exactly as received, for the raw
-    layer; the winning attempt's body is the one returned.
+    Returns (items, was_short). Items are the raw objects exactly as the store
+    sent them. `was_short` means every attempt came back under PAGE_SIZE with at
+    least one item - the page is probably incomplete and is recorded as such,
+    rather than being taken as the end of the store.
     """
     best: list[dict] = []
-    best_payload: dict = {}
 
     for attempt in range(1, PAGE_ATTEMPTS + 1):
         payload = fetcher.get_json(f"{url}?limit={PAGE_SIZE}&page={page}") or {}
         batch = payload.get(key) or []
         if len(batch) > len(best):
-            best, best_payload = batch, payload
+            best = batch
         if len(best) == PAGE_SIZE:
-            return best, False, best_payload
+            return best, False
         if attempt < PAGE_ATTEMPTS:
             log.debug("    page %d returned %d/%d, re-requesting (%d/%d)",
                       page, len(batch), PAGE_SIZE, attempt, PAGE_ATTEMPTS)
 
-    return best, bool(best), best_payload
+    return best, bool(best)
 
 
 def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None) -> dict:
@@ -367,11 +386,43 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
     seen_raw = 0
     listings: list[dict] = []
     errors: list[dict] = []
-    # Every response body as received, before any filtering or field selection.
-    # This is what makes the brand allowlist re-runnable without re-crawling.
+    # Every product body as received, before any filtering or field selection -
+    # keyed by id, so a product carried by twelve collections is stored once
+    # rather than twelve times (issue #15). This is what makes the brand
+    # allowlist re-runnable without re-crawling.
+    raw_products: dict[str, dict] = {}
+    # What each page carried, by id. No bodies, so the trace that diagnosed
+    # #12 and #13 survives at a fraction of the size.
     raw_pages: list[dict] = []
 
-    for label, url in _listing_targets(fetcher, site):
+    targets, guaranteed = _listing_targets(fetcher, site)
+    unfiltered_complete = False
+    ceilings = 0
+    skipped = 0
+
+    for index, (label, url) in enumerate(targets):
+        # `/collections/all` is the whole catalogue in a different order. Once
+        # the unfiltered listing has ended on its own it has already seen every
+        # product, so this is a straight duplicate - but when it truncated, the
+        # different ordering reaches products it never got to. See issue #13.
+        if label == "all" and unfiltered_complete:
+            log.info("  [%s] skipping the `all` collection; the unfiltered "
+                     "listing already covered the catalogue", site.name)
+            # Does not spend one of the guaranteed slots - max_collections
+            # means that many real collections.
+            skipped += 1
+            continue
+
+        if index >= guaranteed + skipped:
+            # The long tail, entered only to chase truncation - issue #14.
+            if not ceilings:
+                break
+            if sum(l["pages_fetched"] for l in listings) >= PAGE_BUDGET:
+                log.info("  [%s] page budget (%d) reached with %d shard(s) still "
+                         "truncated; catalogue continues past this crawl",
+                         site.name, PAGE_BUDGET, ceilings)
+                break
+
         page = 1
         short_pages: list[int] = []
         stopped = "empty_page"
@@ -392,7 +443,7 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                 break
 
             try:
-                batch, was_short, payload = _fetch_page(fetcher, url, page)
+                batch, was_short = _fetch_page(fetcher, url, page)
             except FetchError as exc:
                 # Whatever has been collected so far is kept and written, rather
                 # than thrown away with the site - see issue #2.
@@ -412,14 +463,6 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                 # The only signal that a catalogue has actually ended.
                 break
 
-            raw_pages.append({
-                "listing": label,
-                "page": page,
-                "url": f"{url}?limit={PAGE_SIZE}&page={page}",
-                "count": len(batch),
-                "payload": payload,
-            })
-
             if was_short:
                 # Recorded rather than treated as the end - see issue #1.
                 short_pages.append(page)
@@ -427,8 +470,14 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                             site.name, label, page, len(batch), PAGE_SIZE, PAGE_ATTEMPTS)
 
             seen_raw += len(batch)
+            page_ids: list[str] = []
             for raw in batch:
                 product_id = str(raw.get("id"))
+                page_ids.append(product_id)
+                # First delivery of an id wins. A later one can differ - a price
+                # can change mid-crawl - but keeping both would defeat the point.
+                if product_id not in raw_products:
+                    raw_products[product_id] = raw
                 if product_id in seen_ids:
                     continue  # same product can sit in several collections
                 seen_ids.add(product_id)
@@ -453,9 +502,22 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                     currency=currency, scraped_at=scraped_at,
                 ))
 
+            raw_pages.append({
+                "listing": label,
+                "page": page,
+                "url": f"{url}?limit={PAGE_SIZE}&page={page}",
+                "count": len(batch),
+                "product_ids": page_ids,
+            })
+
             log.info("  [%s/%s] page %d: %d raw, %d kept so far",
                      site.name, label, page, len(batch), len(products))
             page += 1
+
+        if stopped == "page_ceiling":
+            ceilings += 1
+        if label == UNFILTERED_LABEL and stopped == "empty_page":
+            unfiltered_complete = True
 
         listings.append({
             "label": label,
@@ -473,7 +535,7 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
         # Collections overlap, so seen_raw double-counts. seen_unique is how
         # many distinct products the crawl actually laid eyes on.
         "seen_unique": len(seen_ids),
-        "collections_crawled": sum(1 for l in listings if l["label"] != "all"),
+        "collections_crawled": sum(1 for l in listings if l["label"] != UNFILTERED_LABEL),
         "pages_fetched": sum(l["pages_fetched"] for l in listings),
         "short_pages": sum(len(l["short_pages"]) for l in listings),
         # Complete is about termination only: every listing ran out of products
@@ -490,6 +552,7 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
         "rate_limit_final": round(1 / fetcher.min_interval, 2) if fetcher.min_interval else None,
         "rate_limit_start": round(1 / fetcher.min_interval_initial, 2) if fetcher.min_interval_initial else None,
         "raw_pages": raw_pages,
+        "raw_products": raw_products,
         "listings": listings,
         "unmatched_vendors": dict(sorted(unmatched.items(), key=lambda kv: -kv[1])),
     }
