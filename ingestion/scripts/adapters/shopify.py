@@ -46,11 +46,18 @@ MAX_PAGE = 100
 # this label and made per-listing diagnostics ambiguous - see issue #13.
 UNFILTERED_LABEL = "*unfiltered*"
 
-# Collection discovery sorts largest-first, and the largest collections are the
-# catch-alls that hit MAX_PAGE. When that happens the crawl keeps walking down
-# the list, where collections are small enough to complete. Stores that finish
-# cleanly never reach past site.max_collections. See issue #14.
+# Collection discovery sorts largest-first. Past site.max_collections the crawl
+# keeps walking the list only while it is still finding products it has not
+# already seen; this is the ceiling on how far it may walk. See issues #14, #17.
 DEEP_MAX_COLLECTIONS = 400
+
+# How many consecutive tail collections may come back barren before the tail is
+# abandoned, and what counts as barren. Ceilings used to drive this decision and
+# measured the wrong thing: extrabutterny truncated on two shards, dug to all
+# 400 collections, and 468 extra pages produced 2 extra products. Yield is the
+# thing that actually matters and is self-limiting on every store. See #17.
+TAIL_PATIENCE = 5
+TAIL_MIN_NEW = 25
 
 # Hard stop on a single site, so a store with 3,000 collections cannot run
 # unbounded. Only ever reached by a store that is already truncating.
@@ -399,8 +406,8 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
     targets, guaranteed = _initial_targets(site)
     unfiltered_complete = False
     sharded = False
-    ceilings = 0
     skipped = 0
+    barren = 0
 
     index = -1
     while index + 1 < len(targets):
@@ -419,16 +426,20 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
             continue
 
         if index >= guaranteed + skipped:
-            # The long tail, entered only to chase truncation - issue #14.
-            if not ceilings:
+            # The long tail. Walked while it still yields, abandoned once it
+            # does not - see issue #17.
+            if barren >= TAIL_PATIENCE:
+                log.info("  [%s] last %d collections added under %d new products "
+                         "each; tail exhausted at %d collections",
+                         site.name, TAIL_PATIENCE, TAIL_MIN_NEW, len(listings) - 1)
                 break
             if sum(l["pages_fetched"] for l in listings) >= PAGE_BUDGET:
-                log.info("  [%s] page budget (%d) reached with %d shard(s) still "
-                         "truncated; catalogue continues past this crawl",
-                         site.name, PAGE_BUDGET, ceilings)
+                log.info("  [%s] page budget (%d) reached; catalogue may continue "
+                         "past this crawl", site.name, PAGE_BUDGET)
                 break
 
         page = 1
+        known = len(seen_ids)
         short_pages: list[int] = []
         stopped = "empty_page"
 
@@ -519,12 +530,9 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
                      site.name, label, page, len(batch), len(products))
             page += 1
 
-        # Only a truncated *shard* argues for more shards. The unfiltered
-        # listing's own ceiling is what triggered sharding in the first place
-        # and can never be resolved by digging, so counting it would send every
-        # sharded store to the page budget whether or not it needed to go.
-        if stopped == "page_ceiling" and label != UNFILTERED_LABEL:
-            ceilings += 1
+        new = len(seen_ids) - known
+        if index >= guaranteed + skipped:
+            barren = barren + 1 if new < TAIL_MIN_NEW else 0
         if label == UNFILTERED_LABEL and stopped == "empty_page":
             unfiltered_complete = True
 
@@ -533,6 +541,10 @@ def crawl(site: SiteConfig, brands: BrandIndex, *, max_pages: int | None = None)
             "pages_fetched": page - 1,
             "stopped_reason": stopped,
             "short_pages": short_pages,
+            # Products this listing contributed that nothing before it had.
+            # This is what decides whether the tail is worth continuing (#17),
+            # and it is the number to look at when tuning max_collections.
+            "new_products": new,
         })
 
         # The sharding decision, made from what the store just did rather than
