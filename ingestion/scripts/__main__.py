@@ -6,6 +6,7 @@ Usage:
     python -m scripts crawl kith --max-pages 2   short run, for a look at the data
     python -m scripts probe example.com          can this domain be scraped?
     python -m scripts sites                      what is configured
+    python -m scripts collections kith           what a store publishes
     python -m scripts brands                     what the allowlist holds
 
 Each subcommand maps to one function below. argparse reads sys.argv and calls
@@ -18,7 +19,7 @@ import argparse
 import logging
 import sys
 
-from . import normalize, registry
+from . import registry, store
 from .fetch import ConfigError, FetchError, Fetcher
 from .adapters.shopify import MAX_PAGE as PAGE_CEILING, PAGE_SIZE
 from .probe import probe, suggest_yaml
@@ -36,36 +37,29 @@ def _setup_logging(verbose: bool) -> None:
 
 def run_crawl(args: argparse.Namespace) -> int:
     """Scrape each requested site and write one JSON file per site."""
-    brands = registry.load_brands()
     sites = registry.load_sites(args.sites or None)
     if not sites:
         print("no sites matched; run `python -m scripts sites` to see what is configured")
         return 1
 
-    print(f"{len(brands)} brands on the allowlist, {len(sites)} site(s) to crawl\n")
+    print(f"{len(sites)} site(s) to crawl\n")
     failures = 0
 
     for site in sites:
         print(f"{site.name} ({site.base_url})")
         adapter = registry.get_adapter(site.adapter)
         try:
-            result = adapter.crawl(site, brands, max_pages=args.max_pages)
+            result = adapter.crawl(site, max_pages=args.max_pages)
         except FetchError as exc:
             print(f"  FAILED: {exc}\n")
             failures += 1
             continue
 
-        path, raw_path = normalize.write(site, result)
-        kept = len(result["products"])
-        seen = result.get("seen_unique") or result["seen_raw"]
-        pct = (kept / seen * 100) if seen else 0
+        path = store.write(site, result)
         scope = (f" across {result['collections_crawled']} collections"
                  if result.get("collections_crawled") else "")
-        print(f"  kept {kept} of {seen} products ({pct:.0f}%){scope} "
-              f"-> {path.relative_to(normalize.ROOT)}")
-        if raw_path:
-            print(f"  raw: {result['seen_raw']} products as received "
-                  f"-> {raw_path.relative_to(normalize.ROOT)}")
+        print(f"  {result['seen_unique']} products from {result['seen_raw']} "
+              f"deliveries{scope} -> {path.relative_to(store.ROOT)}")
 
         for listing in result.get("listings", []):
             reason = listing["stopped_reason"]
@@ -90,12 +84,12 @@ def run_crawl(args: argparse.Namespace) -> int:
             print(f"  note: {result['short_pages']} of {result['pages_fetched']} pages came "
                   f"back under {PAGE_SIZE} items after retries")
 
-        dropped = result["unmatched_vendors"]
-        if dropped:
-            top = list(dropped.items())[:8]
+        seen_vendors = result["vendors"]
+        if seen_vendors:
+            top = list(seen_vendors.items())[:8]
             preview = ", ".join(f"{vendor} ({count})" for vendor, count in top)
-            more = f" +{len(dropped) - len(top)} more" if len(dropped) > len(top) else ""
-            print(f"  dropped brands: {preview}{more}")
+            more = f" +{len(seen_vendors) - len(top)} more" if len(seen_vendors) > len(top) else ""
+            print(f"  {len(seen_vendors)} vendors: {preview}{more}")
         print()
 
     return 1 if failures else 0
@@ -116,40 +110,6 @@ def run_probe(args: argparse.Namespace) -> int:
         print(f"  vendors        {', '.join(result['vendors'][:15])}")
         print(f"\n  sites/{domain.split('.')[0]}.yaml:\n")
         print("    " + suggest_yaml(result).replace("\n", "\n    "))
-    return 0
-
-
-def run_renormalize(args: argparse.Namespace) -> int:
-    """Rebuild normalized files from stored raw ones, without touching the network.
-
-    Use after changing brands.yaml or the field mapping - the products a former
-    allowlist discarded are still in raw, so they come back for free.
-    """
-    from .adapters.shopify import from_raw
-
-    brands = registry.load_brands()
-    sites = {s.name: s for s in registry.load_sites(include_disabled=True)}
-    wanted = set(args.sites or [])
-    raw_files = sorted(normalize.RAW_DIR.glob("*/*.json"))
-    if wanted:
-        raw_files = [f for f in raw_files if f.parent.name in wanted]
-    if not raw_files:
-        print(f"no raw files under {normalize.RAW_DIR.relative_to(normalize.ROOT)}")
-        return 1
-
-    print(f"{len(brands)} brands on the allowlist, {len(raw_files)} raw file(s)\n")
-    for path in raw_files:
-        raw = normalize.load_raw(path)
-        site = sites.get(raw["site"])
-        if site is None:
-            print(f"  {raw['site']}: no site config, skipped")
-            continue
-        result = from_raw(raw, site, brands)
-        out, _ = normalize.write(site, result)
-        kept, seen = len(result["products"]), result["seen_unique"]
-        pct = (kept / seen * 100) if seen else 0
-        print(f"  {raw['site']:20} {kept:>6} of {seen:>6} ({pct:>3.0f}%) "
-              f"-> {out.relative_to(normalize.ROOT)}")
     return 0
 
 
@@ -231,11 +191,6 @@ def main(argv: list[str] | None = None) -> int:
     probe_cmd.set_defaults(handler=run_probe)
 
     sub.add_parser("sites", help="list configured sites").set_defaults(handler=list_sites)
-
-    renorm = sub.add_parser("renormalize",
-                            help="rebuild normalized files from raw, without re-crawling")
-    renorm.add_argument("sites", nargs="*", help="site names; default is every raw file")
-    renorm.set_defaults(handler=run_renormalize)
 
     cols = sub.add_parser("collections", help="show a store's collections, largest first")
     cols.add_argument("sites", nargs="*", help="site names; default is all")
