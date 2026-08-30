@@ -15,7 +15,7 @@ from types import ModuleType
 import yaml
 
 from .adapters import shopify
-from .models.site_config import SiteConfig
+from .site_config import SiteConfig
 
 ROOT = Path(__file__).resolve().parent.parent
 SITES_DIR = ROOT / "sites"

@@ -20,7 +20,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .models.site_config import SiteConfig
+from .site_config import SiteConfig
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -41,6 +41,10 @@ def build(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]:
         "base_url": site.base_url,
         "currency": result.get("currency"),
         "country": result.get("country"),
+        # Config's claim about this store's brand, when its `vendor` field is a
+        # season or a fabric rather than the label. Ingestion does not act on
+        # it - it is recorded so processing does not have to read sites/*.yaml.
+        "brand_override": site.brand_override,
         "scraped_at": result["scraped_at"],
 
         # Deliveries, counting a product once per page that carried it.

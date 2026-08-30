@@ -6,19 +6,28 @@ Nothing here runs yet. What is present is the classification work that used to
 sit inside the crawler, moved out when ingestion was reduced to collection only:
 
 ```
-brands.yaml        263 brands on three axes — segment, tier, styles
-brands.py          load_brands(), which reads that file into a folded index
-models/brand.py    Brand, BrandIndex, and the Unicode folding behind matching
-models/product.py  the product record shape
-models/size.py     one size of one product
+brands.yaml          263 brands on three axes — segment, tier, styles
+scripts/brands.py    load_brands(), which reads that file into a folded index
+scripts/brand.py     Brand, BrandIndex, and the Unicode folding behind matching
 ```
 
-`brands.py` works today:
+It works today:
 
 ```python
-from processing.brands import load_brands
+from processing.scripts.brands import load_brands
 load_brands().match("Yohji Yamamoto")   # Designer / Luxury / [Avant-Garde]
 ```
+
+The `Product` and `Size` dataclasses that used to sit in ingestion are **not**
+here. In PySpark the record shape is a `StructType` and rows arrive as `Row`,
+so a dataclass per product would mean pulling data out of Spark to build
+objects — the opposite of what the engine is for. They are in git history if a
+non-Spark consumer ever wants them.
+
+`BrandIndex` will likely go the same way: a dict lookup is a driver-side
+structure, and matching 336K products against 263 brands is a broadcast join.
+What survives that rewrite is `fold()` — the Unicode folding is real logic
+whatever executes it.
 
 ## The taxonomy
 

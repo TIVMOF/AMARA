@@ -48,6 +48,9 @@ sites/*.yaml ──► registry.py ──► adapters/<adapter>.py ──► sto
 - **`fetch.py`** — the only module that touches the network. Rate limiting,
   retries and the User-Agent live here.
 - **`store.py`** — JSON writing. Nothing else; it does not interpret a product.
+- **`site_config.py`** — the shape of a `sites/*.yaml`. It exists to fail loudly:
+  an unknown key is an error, so `discover_colections: true` is caught at load
+  rather than silently leaving sharding off.
 Brand classification, the product record shape and everything else that
 interprets a catalogue live in `../processing/`. This folder collects; it does
 not decide what anything means.

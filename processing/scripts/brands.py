@@ -11,9 +11,9 @@ from pathlib import Path
 
 import yaml
 
-from .models.brand import Brand, BrandIndex
+from .brand import Brand, BrandIndex
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 BRANDS_FILE = ROOT / "brands.yaml"
 
 

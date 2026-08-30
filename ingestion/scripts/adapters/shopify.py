@@ -21,7 +21,7 @@ import re
 from datetime import datetime, timezone
 
 from ..fetch import Fetcher, FetchError
-from ..models.site_config import SiteConfig
+from ..site_config import SiteConfig
 
 log = logging.getLogger(__name__)
 
