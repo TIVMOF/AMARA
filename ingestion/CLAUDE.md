@@ -2,22 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-AMARA (Attire Metrics & Analytic Retail Architecture) collects clothing
-catalogues from fashion retailers and will analyse them. Two stages, and the
-split between them is the central design fact:
+`ingestion/` collects clothing catalogues from fashion retailers into JSON
+files. It reaches every page a store will serve and stores what arrived. **No
+filtering, no field mapping, no cleaning, no interpretation.**
 
-- **`ingestion/`** — collects. Reaches every page a store will serve and stores
-  what arrived. No filtering, no field mapping, no cleaning, no interpretation.
-- **`processing/`** — interprets. Brand classification and the transformation
-  into the star schema in `img/amara-analystical-data-diagram.png`. **Barely
-  started**; the transformation will be PySpark.
+That boundary is the central design fact and it is load-bearing: interpretation
+— brand classification, the product record shape, the transformation into the
+star schema — belongs to `../processing/`. If a change would make this folder
+decide what a value *means*, it goes there instead.
 
-If a change would make `ingestion/` decide what a value *means*, it belongs in
-`processing/` instead.
+Deduplication is the one exception, and it is structural rather than a policy —
+see **The output file** below.
 
 ## Commands
-
-All from `ingestion/`, which has its own `.venv`:
 
 ```bash
 .venv/bin/python -m scripts crawl                    # every enabled site (~2h, 50 sites)
@@ -26,13 +23,6 @@ All from `ingestion/`, which has its own `.venv`:
 .venv/bin/python -m scripts probe someretailer.com   # is the JSON open? prints a sites/*.yaml
 .venv/bin/python -m scripts sites                    # what is configured
 .venv/bin/python -m scripts collections kith         # what a store publishes, largest first
-```
-
-`processing/` has no runner yet. Its one working piece:
-
-```python
-from processing.scripts.brands import load_brands
-load_brands().match("Yohji Yamamoto")   # Designer / Luxury / [Avant-Garde]
 ```
 
 **There is no test suite** — no pytest, no test files, no CI. Changes are
@@ -45,10 +35,11 @@ it — wrap long runs in `caffeinate -i -m`.
 
 ## Architecture
 
-**Adapters are per access method, not per website.** One `shopify.py` serves all
-50 stores because they share an identical API; they differ only in a YAML file.
-A store on another platform gets its own module, never a branch inside an
-existing one. `registry.ADAPTERS` maps a site's `adapter:` key to its module.
+**Adapters are per access method, not per website.** One `adapters/shopify.py`
+serves all 50 stores because they share an identical API; they differ only in a
+YAML file. A store on another platform gets its own module, never a branch
+inside an existing one. `registry.ADAPTERS` maps a site's `adapter:` key to its
+module.
 
 ```
 sites/*.yaml ──► registry.py ──► adapters/shopify.py ──► store.py ──► data/raw/
@@ -58,6 +49,10 @@ sites/*.yaml ──► registry.py ──► adapters/shopify.py ──► store
 
 `fetch.py` reads its config from `AMARA_INGESTION_*` in `.env` with **no code
 fallbacks** — a missing key raises rather than silently using a stale default.
+
+`site_config.py` exists to fail loudly: an unknown key in a site YAML is an
+error, so `discover_colections: true` is caught at load rather than silently
+leaving sharding off.
 
 ### What the Shopify API forces
 
@@ -83,6 +78,10 @@ The unfiltered listing is labelled `*unfiltered*` because asterisks cannot
 appear in a Shopify handle, and many stores publish a real collection called
 `all` that would otherwise collide with it.
 
+A short page is **not** the end of a catalogue — these stores soft-throttle by
+serving fewer items instead of returning 429, so `_fetch_page` re-requests a
+short page `PAGE_ATTEMPTS` (3) times and only an empty page ends a listing.
+
 ### The output file
 
 One per crawl at `data/raw/<site>/<timestamp>.json`. Product bodies keyed by id
@@ -90,7 +89,7 @@ under `products`, the page-by-page trace as id lists under `responses`, and the
 crawl report alongside — `complete`, `pages`, `short_pages`, `listings`,
 `errors`, `vendors`, `throttled`, `rate_limit_*`.
 
-**Deduplication is the only processing ingestion does, and it is structural**:
+**Deduplication is the only processing done here, and it is structural**:
 `products` is a dict keyed by product id, so duplicates are impossible. This
 matters — collections overlap heavily by design, and keeping every copy cost
 16 GB where 2.8 GB holds the same 336,822 products.
@@ -103,7 +102,7 @@ byte-level formatting are not retained. Every product body is verbatim.
 `The Row` and serves seven vendors including archive Yohji Yamamoto. The file
 keeps both the claim and what the store said.
 
-## Working on this repo
+## Working on this folder
 
 **The issue tracker is the reasoning record.** Code comments cite `#N` freely
 and those numbers matter; read the issue before changing the code it guards.
@@ -126,8 +125,8 @@ and when a fact is corrected, grep for every place it was repeated.
 
 **Gotchas that have already cost time:**
 
-- YAML 1.1 parses bare `On` as boolean `true`. The brand "On" must be quoted;
-  `load_brands()` raises on a non-string brand name because of this.
+- YAML 1.1 parses bare `On` as boolean `true`. Any brand or handle named "On"
+  must be quoted.
 - Farfetch (Akamai) and SSENSE (Cloudflare) return 403. The whole project
   pivoted to open Shopify JSON endpoints because of it.
 - zsh does not word-split unquoted variables, so `crawl $SITES` passes one
@@ -135,5 +134,7 @@ and when a fact is corrected, grep for every place it was repeated.
 - `.env` values are single-quoted: the User-Agent contains `(`, `)` and `;`,
   which break `source .env`. python-dotenv strips the quotes; Docker
   `--env-file` does not.
+- Sending `Accept-Language` shrank catalogues on some stores — notre-shop went
+  from 249 items per page to 142. `fetch.py` does not send it.
 
-`ingestion/data/` and `processing/data/` are gitignored. A full crawl is ~2.8 GB.
+`data/` is gitignored. A full crawl is ~2.8 GB.
