@@ -51,9 +51,6 @@ sites/*.yaml ──► registry.py ──► adapters/<adapter>.py ──► sto
 - **`site_config.py`** — the shape of a `sites/*.yaml`. It exists to fail loudly:
   an unknown key is an error, so `discover_colections: true` is caught at load
   rather than silently leaving sharding off.
-Brand classification, the product record shape and everything else that
-interprets a catalogue live in `../processing/`. This folder collects; it does
-not decide what anything means.
 
 ## Adapters
 
@@ -79,8 +76,11 @@ Normalization is a separate job for whatever reads these files.
 ```json
 {
   "site": "brownsfashion",
+  "adapter": "shopify",
+  "base_url": "https://www.brownsfashion.com",
   "currency": "GBP",
   "country": "GB",
+  "brand_override": null,
   "scraped_at": "2026-08-30T09:14:02Z",
 
   "products_received": 189619,
@@ -97,6 +97,8 @@ Normalization is a separate job for whatever reads these files.
   ],
   "errors": [],
   "throttled": 0,
+  "rate_limit_start": 1.0,
+  "rate_limit_final": 1.0,
 
   "responses": [
     { "listing": "*unfiltered*", "page": 1,
@@ -108,6 +110,11 @@ Normalization is a separate job for whatever reads these files.
   }
 }
 ```
+
+`brand_override` is what the site config claims about the store, recorded and
+not applied — therow.com is configured `The Row` and serves seven vendors,
+including archive Yohji Yamamoto and Madame Grès. Both the claim and what the
+store actually said are kept, so processing can decide.
 
 `products_received` counts deliveries, `products_stored` counts distinct
 bodies. Bodies are keyed by id and stored once: collections overlap by design,
@@ -131,16 +138,27 @@ a mid-crawl price change is invisible).
 ## Sharding by collection
 
 An unfiltered `/products.json` stops at 100 pages, so it cannot reach past
-25,000 products. It is also incomplete well below that on some stores - renarts
-serves 249 products unfiltered and 1,975 across its collections.
+25,000 products. Collection-scoped endpoints each get their own page budget,
+which is the only way past that — tag-filtered collection URLs return 404 and
+`sort_by` is accepted on these endpoints and then silently ignored.
 
-Both are fixed by crawling collection-scoped endpoints, each of which gets its
-own page budget:
+**The decision is made at run time, not in config.** `/products.json` is
+crawled first. If it ends on an empty page it has shown the whole catalogue and
+nothing is discovered at all; if it hits the ceiling, collections are discovered
+then. In the last full run **5 of 50 sites sharded** — the five whose listing
+hits the ceiling. `discover_collections: true` is permission, not instruction.
 
-```yaml
-discover_collections: true
-max_collections: 40
+Where sharding does run, the crawl takes the largest `max_collections` and then
+keeps walking the list only while it is still finding products it has not
+already seen, stopping after five collections that add fewer than 25 each:
+
 ```
+brownsfashion  tail contributions [0, 0, 0, 0, 0]                stopped at 45
+stadiumgoods   tail contributions [1196, 73, 0, 858, 367, ...]   stopped at 65
+```
+
+Four of the five had nothing past collection 40. stadiumgoods had 1,196 and 858
+and 927 sitting at ranks 41, 44 and 59, and a fixed cap would have lost them.
 
 `python -m scripts collections <site>` lists what a store publishes, largest
 first. Browns has 2,700 non-empty collections; they overlap heavily, so the
@@ -159,11 +177,13 @@ single-brand, its currency, and prints a `sites/*.yaml` to paste in.
 For single-brand stores, check the vendor strings first. Several put something
 other than the brand in Shopify's `vendor` field — SKIMS uses fabric names
 (`COTTON JERSEY`), Dries Van Noten uses seasons (`AW26 MEN`), Ted Baker uses
-licensees (`Jack Victor`). Set `brand_override` for those.
+licensees (`Jack Victor`). Set `brand_override` for those — the crawl records
+it alongside the vendors it actually saw, and does not act on it.
 
 ## Notes
 
 - `.env` holds the User-Agent and HTTP tunables. There are no fallbacks in
   code: a missing key raises rather than silently using a stale value.
-- Rate limit defaults to 0.5 req/s per host, overridable per site.
+- Rate limit defaults to 1 req/s per host, overridable per site. A 429
+  widens the interval for the rest of that crawl rather than failing.
 - `data/` is gitignored.
