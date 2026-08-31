@@ -1,4 +1,5 @@
 ingestion/data/
+dismantling/data/
 processing/data/
 
 # secrets / local config

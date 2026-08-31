@@ -1,77 +1,91 @@
 # processing
 
-Turns the raw crawls in `../ingestion/data/raw/` into the analytical model.
+Turns the staged crawls in `../dismantling/data/staging/` into clean parquet
+tables under `data/processed/`.
 
-Nothing here runs yet. What is present is the classification work that used to
-sit inside the crawler, moved out when ingestion was reduced to collection only:
-
-```
-brands.yaml          263 brands on three axes — segment, tier, styles
-scripts/brands.py    load_brands(), which reads that file into a folded index
-scripts/brand.py     Brand, BrandIndex, and the Unicode folding behind matching
+```bash
+.venv/bin/pip install -r requirements.txt
+JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python scripts/processing.py
 ```
 
-It works today:
+Spark needs a JVM; 21 is what Spark 4 wants.
 
-```python
-from processing.scripts.brands import load_brands
-load_brands().match("Yohji Yamamoto")   # Designer / Luxury / [Avant-Garde]
-```
+## What it writes
 
-The `Product` and `Size` dataclasses that used to sit in ingestion are **not**
-here. In PySpark the record shape is a `StructType` and rows arrive as `Row`,
-so a dataclass per product would mean pulling data out of Spark to build
-objects — the opposite of what the engine is for. They are in git history if a
-non-Spark consumer ever wants them.
+The data-bearing tables of the model in `../img/amara-analystical-data-diagram.png`:
 
-`BrandIndex` will likely go the same way: a dict lookup is a driver-side
-structure, and matching 336K products against 263 brands is a broadcast join.
-What survives that rewrite is `fold()` — the Unicode folding is real logic
-whatever executes it.
+| table | grain | rows |
+|---|---|---:|
+| `dim_retailer` | one per retailer | 50 |
+| `dim_date` | one per observation date | 2 |
+| `dim_product` | one per product per crawl | 336,515 |
+| `fact_product_observation` | price and availability, per product per date | 336,515 |
+| `size_to_product` | one per product per size | 2,964,643 |
 
-## The taxonomy
+**The lookup tables are not written here** — `dim_brand`, `dim_category`,
+`size`, `style`, `tier`, `gender`, `color`, `material`, `country`. Each is the
+distinct values of a column this job already produces, and Snowflake derives
+them along with every primary and foreign key. So these columns hold natural
+values, not surrogate ids: `dim_product.brand` is `"Rick Owens"`, not `4471`.
 
-A brand sits on three independent axes rather than one label:
+`brands.yaml` is reference data for the same reason. It carries 263 brands on
+three axes — segment, tier, styles — and populates `dim_brand`, `tier`,
+`style` and `style_to_brand` once it is loaded into Snowflake. Nothing in this
+job reads it.
 
-```
-Yohji Yamamoto   segment=Designer               tier=Luxury      styles=[Avant-Garde]
-Nike             segment=Sportswear             tier=Premium     styles=[Performance]
-Zara             segment=High Street            tier=Mainstream  styles=[Casual]
-Uma Wang         segment=Contemporary Designer  tier=Luxury      styles=[Avant-Garde, Minimalist]
-```
+## Cleaning
 
-`styles` is a list — a brand routinely sits in more than one, and forcing a
-single label throws away half the classification.
+This is the only stage that changes a value. Ingestion stores what the store
+sent; dismantling only reshapes it. By the time data arrives here it is as
+inconsistent as 50 storefronts can make it.
 
-| axis | vocabulary |
-|---|---|
-| `segment` | Luxury House · Designer · Contemporary Designer · Streetwear · Sportswear · Outdoor · Casual · High Street · Denim · Basics |
-| `tier` | High Luxury · Luxury · Premium · Mainstream |
-| `styles` | Avant-Garde · Contemporary · Lifestyle · Occasion · Minimalist · Classic · Glamour · Feminine · Casual · Street · Performance · Technical · Heritage |
+- **Case.** 39% of vendor strings arrive as `RICK OWENS`, which would sit
+  beside `Rick Owens` from another store as a second brand. A value is
+  title-cased only when it is entirely upper case, so `A.P.C.`, `nanushka` and
+  `HOKA ONE ONE` are left alone rather than mangled by a blanket `initcap`.
+- **Whitespace.** Trimmed, runs collapsed, and empty strings become null —
+  otherwise `""` and `NULL` become two rows in whatever lookup Snowflake builds.
+- **Gender.** Stated three ways: a `Gender` option (307 products), a
+  `Gender: Women` tag (81K occurrences) and a bare `mens` tag (238K). All three
+  are folded together, which is the difference between 16% and 72% coverage. A
+  product carrying both `Gender: Men` and `Gender: Women` resolves to `Unisex`
+  rather than whichever tag came first.
+- **Money.** 3,422 variants price at `0.00` — gift cards, placeholders,
+  unreleased stock. Kept as zero they read as free, and against a
+  `compare_at_price` they produce a 100% discount that is not a sale. Non-
+  positive money becomes null.
+- **Discounts.** `original_price` is set only where the store is genuinely
+  charging less than its stated normal price. Shopify stores routinely set
+  `compare_at_price` equal to `price`. Beyond `MAX_PLAUSIBLE_DISCOUNT` (95%) the
+  comparison is discarded as an artifact: Stadium Goods lists a `190.00`
+  sneaker against a `compare_at_price` of `25,542,668.00`.
 
-What a brand *makes* is deliberately not an axis. That Church's sells shoes and
-Serapian sells bags is a fact about the product, not the brand — it belongs to
-`dim_category`. Likewise which genders a brand dresses.
+## Coverage
 
-Values are checked against the vocabularies at load time, so a typo fails
-loudly rather than inventing a fourteenth style:
+What the sources actually support, measured over all 336,515 products:
 
-```
-error: brands.yaml: group 8: style='Avante-Garde' is not in the declared styles
-       (Avant-Garde, Casual, Classic, Feminine, Glamour, Heritage, ...)
-```
+| column | filled | distinct |
+|---|---:|---:|
+| `name` | 100.0% | 301,736 |
+| `brand` | 100.0% | 2,792 |
+| `category` | 97.4% | 959 |
+| `gender` | 71.9% | 4 |
+| `color` | 30.8% | 9,954 |
+| `material` | 0.5% | 148 |
 
-Matching folds case, accents and punctuation, so `ACNE STUDIOS`, `Acne Studios`,
-`ALAIA` and `Alaïa` all match. Sub-labels and alternative spellings need an
-entry under `aliases:` — `Air Jordan → Jordan`, `Valentino Garavani → Valentino`.
+`color` and `material` are only populated where a store declares them as a
+variant option. Both appear unlabelled in `body_html` on many more products,
+and extracting them from prose is a separate job. `material` is kept as a
+column because the model has one, not because it is usable yet.
 
-Every crawl reports the vendors it saw under `vendors`, unfiltered and counted.
-That report is how the list grows: anything in it that should be classified is
-either a missing brand or a missing alias.
+## Reading the staged files
 
-## Target model
+Two traps, both already handled in `read_staging`:
 
-`../img/amara-analystical-data-diagram.png` — a star schema around
-`fact_product_observation`, with `dim_product`, `dim_brand`, `dim_category`,
-`dim_retailer` and `dim_date`, bridged to `size`, `style`, `gender`, `color`
-and `material`.
+- `crawl.json` is one indented object, so it needs `multiLine`. Without it
+  every line comes back as `_corrupt_record`.
+- Its `vendors` field used to be keyed by vendor name, which made Spark infer
+  one column per vendor and then fail outright where two spellings differed
+  only by case — `032c` and `032C` are both real. Dismantling now emits a list
+  of records, and this job declares `CRAWL_SCHEMA` explicitly so inference
+  never runs on that file at all.
