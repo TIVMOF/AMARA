@@ -1,0 +1,33 @@
+{
+  "site": "rickowens",
+  "adapter": "shopify",
+  "base_url": "https://www.rickowens.eu",
+  "currency": "EUR",
+  "country": "IT",
+  "brand_override": "Rick Owens",
+  "scraped_at": "2026-08-30T20:49:39Z",
+  "products_received": 2237,
+  "products_stored": 2237,
+  "vendors": {
+    "RICK OWENS": 2237
+  },
+  "complete": true,
+  "pages": 9,
+  "short_pages": 1,
+  "collections_crawled": 0,
+  "listings": [
+    {
+      "label": "*unfiltered*",
+      "pages_fetched": 9,
+      "stopped_reason": "empty_page",
+      "short_pages": [
+        9
+      ],
+      "new_products": 2237
+    }
+  ],
+  "errors": [],
+  "throttled": 0,
+  "rate_limit_start": 1.0,
+  "rate_limit_final": 1.0
+}
