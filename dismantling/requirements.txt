@@ -1,0 +1,7 @@
+# No third-party dependencies.
+#
+# This stage reshapes JSON with the standard library alone - json, pathlib,
+# argparse. It is deliberately the one stage you can run anywhere without a
+# virtualenv:
+#
+#     python3 -m scripts.dismantle

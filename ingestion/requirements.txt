@@ -1,3 +1,4 @@
-requests>=2.31.0
-PyYAML>=6.0.1
-python-dotenv>=1.0.0
+# Crawling and config. Nothing here parses or interprets a product.
+requests>=2.31.0        # the only network client; see scripts/fetch.py
+PyYAML>=6.0.1           # sites/*.yaml
+python-dotenv>=1.0.0    # AMARA_INGESTION_* from .env

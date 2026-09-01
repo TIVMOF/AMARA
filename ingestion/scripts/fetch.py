@@ -39,6 +39,8 @@ THROTTLE_BACKOFF = 1.5      # multiplies the interval on every 429
 MAX_INTERVAL = 30.0         # seconds between requests, ceiling
 
 
+# ── errors ──────────────────────────────────────────────────────────────────
+
 class ConfigError(RuntimeError):
     """A required setting is missing from the environment."""
 
@@ -46,6 +48,8 @@ class ConfigError(RuntimeError):
 class FetchError(RuntimeError):
     """A URL could not be fetched, or did not return JSON."""
 
+
+# ── configuration ───────────────────────────────────────────────────────────
 
 def env(name: str) -> str:
     """Read a required AMARA_INGESTION_* setting."""
@@ -58,6 +62,8 @@ def env(name: str) -> str:
         )
     return value
 
+
+# ── back-off ────────────────────────────────────────────────────────────────
 
 def _retry_after(response: requests.Response) -> float | None:
     """Seconds to wait, if the server said. Handles both header forms."""
@@ -78,6 +84,8 @@ def _retry_after(response: requests.Response) -> float | None:
     except Exception:
         return None
 
+
+# ── fetching ────────────────────────────────────────────────────────────────
 
 class Fetcher:
     """A rate-limited JSON client. One instance per crawl.
