@@ -1,1 +1,12 @@
-PyYAML>=6.0.1
+# Spark, and the reference vocabularies it reads.
+#
+# PySpark also needs a JVM on PATH - Spark 4 wants Java 17 or 21:
+#
+#     JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python -m scripts.process
+pyspark>=4.0.0          # pulls py4j; see scripts/tables.py
+PyYAML>=6.0.1           # reference/*.yaml
+
+# Not imported by this code, but needed to open the output with pandas
+# (pd.read_parquet) or to use toPandas(). Without it pandas raises
+# "Unable to find a usable engine".
+pyarrow>=17.0.0
