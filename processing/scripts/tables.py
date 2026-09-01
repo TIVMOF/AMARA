@@ -1,8 +1,11 @@
-"""The model's data-bearing tables.
+"""The tables this stage writes.
 
-Each function takes staged data plus the vocabularies and returns one table of
-`img/amara-analystical-data-diagram.png`. Names are upper case throughout;
-Snowflake derives the lookups and every key from these columns.
+Each function takes staged data plus the vocabularies and returns one clean
+table for `data/processed/`. Every column holds a natural value in upper case
+rather than a surrogate id - Snowflake loads these, assigns the keys, and
+builds the analytical star schema from them. Nothing here is a fact table:
+`variants` carries the measures at the grain the store published them, and
+what gets aggregated into a fact is a decision for the analytical layer.
 """
 
 from __future__ import annotations
@@ -14,11 +17,10 @@ from pyspark.sql.functions import (
     concat_ws,
     dayofmonth,
     lit,
-    max as spark_max,
-    min as spark_min,
     month,
     quarter,
     round as spark_round,
+    row_number,
     to_date,
     to_timestamp,
     transform as array_transform,
@@ -27,6 +29,7 @@ from pyspark.sql.functions import (
     when,
     year,
 )
+from pyspark.sql.window import Window
 
 from .clean import (
     clean_text,
@@ -81,6 +84,15 @@ def option_position(options: Column, names: tuple[str, ...]) -> Column:
     return try_element_at(matching, lit(1))["position"].cast("int")
 
 
+def slot_value(slots: Column, position: Column) -> Column:
+    """A variant's option1/2/3 at a given slot, cleaned.
+
+    Null where the product declares no such option, which is most of what a
+    store sells that is not a garment.
+    """
+    return when(position.isNotNull(), name(try_element_at(slots, position)))
+
+
 def joined_values(options: Column, names: tuple[str, ...]) -> Column:
     """A named option's values as one string, or null when it has none.
 
@@ -92,10 +104,15 @@ def joined_values(options: Column, names: tuple[str, ...]) -> Column:
     return when(joined == "", None).otherwise(joined)
 
 
+def crawl_date() -> Column:
+    """The date a staged row was observed, from its `scraped_at` timestamp."""
+    return to_date(to_timestamp(col("scraped_at")))
+
+
 # ── tables ─────────────────────────────────────────────────────────────────────
 
 def retailers(crawls: DataFrame, countries: Reference) -> DataFrame:
-    """dim_retailer - name, url, country."""
+    """retailers - name, url, country."""
     return (
         crawls
         .select(
@@ -108,10 +125,10 @@ def retailers(crawls: DataFrame, countries: Reference) -> DataFrame:
 
 
 def dates(crawls: DataFrame) -> DataFrame:
-    """dim_date - one row per date any crawl observed."""
+    """dates - one row per date any crawl observed."""
     return (
         crawls
-        .select(to_date(to_timestamp(col("scraped_at"))).alias("date"))
+        .select(crawl_date().alias("date"))
         .where(col("date").isNotNull())
         .dropDuplicates(["date"])
         .select(
@@ -128,7 +145,12 @@ def dates(crawls: DataFrame) -> DataFrame:
 
 def products(staged: DataFrame, brands: Reference, categories: Reference,
              genders: Reference) -> DataFrame:
-    """dim_product - name, brand, category, gender, color, material.
+    """products - the catalogue: name, brand, category, gender, color, material.
+
+    One row per product per retailer, describing what the garment is. What it
+    cost and whether it was in stock belongs to `variants`, which is where a
+    date makes sense - so a product crawled twice is one row here, taken from
+    the most recent crawl.
 
     Products whose vendor is not on the brand allowlist are dropped here, which
     is what makes brands.yaml the allowlist as well as the classification.
@@ -138,7 +160,7 @@ def products(staged: DataFrame, brands: Reference, categories: Reference,
     and a product declaring more than one is Unisex rather than whichever came
     first.
     """
-    return (
+    described = (
         staged
         .select(
             col("id").cast("string").alias("product"),
@@ -153,41 +175,55 @@ def products(staged: DataFrame, brands: Reference, categories: Reference,
             ).alias("gender"),
             joined_values(col("options"), COLOR_OPTIONS).alias("color"),
             joined_values(col("options"), MATERIAL_OPTIONS).alias("material"),
-            to_date(to_timestamp(col("scraped_at"))).alias("date"),
+            crawl_date().alias("date"),
         )
         .where(col("brand").isNotNull())
-        .dropDuplicates(["product", "retailer", "date"])
+    )
+
+    newest = Window.partitionBy("product", "retailer").orderBy(col("date").desc_nulls_last())
+    return (
+        described
+        .withColumn("_rank", row_number().over(newest))
+        .where(col("_rank") == 1)
+        .drop("_rank", "date")
     )
 
 
-def observations(dim_products: DataFrame, staged_variants: DataFrame) -> DataFrame:
-    """fact_product_observation - price and availability, at product grain.
+def variants(staged_products: DataFrame, staged_variants: DataFrame,
+             catalogue: DataFrame) -> DataFrame:
+    """variants - one row per variant per crawl: size, colour, price, stock.
 
-    The model puts sizes in their own bridge, so this is one row per product
-    per date rather than per variant. A product's variants are the same garment
-    in different sizes and almost always share a price, so the row carries the
-    lowest - the price a shopper is quoted.
+    The variant is what a store actually sells and prices, so this is where the
+    measures live. A product averages 10.7 variants and they do not agree:
+    27.3% of products have some sizes in stock and others not, which is the
+    signal any size-level analysis in Snowflake needs.
+
+    Which of option1/2/3 holds the size differs per store, so the slot is read
+    from the product's own option list rather than assumed. Variants of a
+    product with no size option - fragrance, homeware - keep a null size rather
+    than being dropped; they still carry a price.
 
     `original_price` is set only where a store is genuinely charging less than
     its stated normal price. Shopify stores routinely set `compare_at_price`
     equal to `price`, or to zero, when nothing is on sale.
     """
-    priced = (
-        staged_variants
-        .select(
-            col("product_id").cast("string").alias("product"),
-            name(col("site")).alias("retailer"),
-            to_date(to_timestamp(col("scraped_at"))).alias("date"),
-            positive(col("price").cast("decimal(12,2)")).alias("price"),
-            positive(col("compare_at_price").cast("decimal(12,2)")).alias("compare_at"),
-            col("available").cast("boolean").alias("available"),
-        )
-        .groupBy("product", "retailer", "date")
-        .agg(
-            spark_min("price").alias("price"),
-            spark_max("compare_at").alias("compare_at"),
-            spark_max("available").alias("available"),
-        )
+    slots = staged_products.select(
+        col("id").cast("string").alias("product"),
+        name(col("site")).alias("retailer"),
+        option_position(col("options"), SIZE_OPTIONS).alias("size_slot"),
+        option_position(col("options"), COLOR_OPTIONS).alias("color_slot"),
+    ).dropDuplicates(["product", "retailer"])
+
+    sold = staged_variants.select(
+        col("id").cast("string").alias("variant"),
+        col("product_id").cast("string").alias("product"),
+        name(col("site")).alias("retailer"),
+        crawl_date().alias("date"),
+        clean_text(col("sku")).alias("sku"),
+        array(col("option1"), col("option2"), col("option3")).alias("options"),
+        positive(col("price").cast("decimal(12,2)")).alias("price"),
+        positive(col("compare_at_price").cast("decimal(12,2)")).alias("compare_at"),
+        col("available").cast("boolean").alias("available"),
     )
 
     discounting = (col("compare_at") > col("price")) & (
@@ -196,61 +232,26 @@ def observations(dim_products: DataFrame, staged_variants: DataFrame) -> DataFra
     original = when(discounting, col("compare_at"))
 
     return (
-        dim_products.alias("p")
-        .join(priced.alias("v"), ["product", "retailer", "date"], "inner")
+        sold
+        .join(slots, ["product", "retailer"], "left")
+        # Only variants of products that survived the brand allowlist.
+        .join(catalogue.select("product", "retailer"), ["product", "retailer"], "left_semi")
         .select(
+            "variant",
             "product",
-            col("p.brand").alias("brand"),
-            col("p.category").alias("category"),
             "retailer",
             "date",
-            col("v.price").alias("price"),
+            "sku",
+            slot_value(col("options"), col("size_slot")).alias("size"),
+            slot_value(col("options"), col("color_slot")).alias("color"),
+            "price",
             original.alias("original_price"),
             spark_round(
-                when(original.isNotNull(), (original - col("v.price")) / original * 100), 2
+                when(original.isNotNull(), (original - col("price")) / original * 100), 2
             ).alias("discount"),
-            col("v.available").alias("available"),
+            "available",
         )
-    )
-
-
-def sizes(staged_products: DataFrame, staged_variants: DataFrame,
-          dim_products: DataFrame) -> DataFrame:
-    """size_to_product - one row per product per size it is sold in.
-
-    Which of option1/2/3 holds the size differs per store, so the slot is read
-    from the product's own option list. Products with no size option -
-    fragrance, homeware - contribute nothing rather than a null size.
-
-    Sizes are not a controlled vocabulary: 2,533 distinct values mixing alpha,
-    US, EU and UK scales. They are cleaned and kept as written.
-    """
-    positions = staged_products.select(
-        col("id").cast("string").alias("product"),
-        name(col("site")).alias("retailer"),
-        to_date(to_timestamp(col("scraped_at"))).alias("date"),
-        option_position(col("options"), SIZE_OPTIONS).alias("slot"),
-    ).where(col("slot").isNotNull())
-
-    slots = staged_variants.select(
-        col("product_id").cast("string").alias("product"),
-        name(col("site")).alias("retailer"),
-        to_date(to_timestamp(col("scraped_at"))).alias("date"),
-        array(col("option1"), col("option2"), col("option3")).alias("slots"),
-    )
-
-    return (
-        positions
-        .join(slots, ["product", "retailer", "date"], "inner")
-        # Only sizes of products that survived the brand allowlist.
-        .join(dim_products.select("product", "retailer", "date"),
-              ["product", "retailer", "date"], "left_semi")
-        .select(
-            "product", "retailer", "date",
-            name(try_element_at(col("slots"), col("slot"))).alias("size"),
-        )
-        .where(col("size").isNotNull())
-        .dropDuplicates(["product", "retailer", "date", "size"])
+        .dropDuplicates(["variant", "retailer", "date"])
     )
 
 

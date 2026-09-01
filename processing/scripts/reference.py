@@ -10,8 +10,9 @@ stays in the parquet, because rows written by earlier runs still point at it.
 The first run has no parquet to compare against, so every value is new.
 
 Only closed vocabularies live here. `color`, `size` and `material` are open -
-9,315 colours, 2,533 sizes, and materials that are fabric compositions rather
-than names - so they stay plain string columns on the product.
+9,315 colours, 1,806 sizes across four incompatible scales, and materials that
+are fabric compositions rather than names - so they stay plain string columns
+on the product and the variant.
 """
 
 from __future__ import annotations
@@ -99,7 +100,7 @@ def load_brands() -> Reference:
     document = _read("brands.yaml")
     segments = {str(s).upper() for s in document.get("segments") or []}
     tiers = {str(t).upper() for t in document.get("tiers") or []}
-    reference = Reference(name="dim_brand")
+    reference = Reference(name="brands")
 
     for brand, body in (document.get("brands") or {}).items():
         body = body or {}
@@ -126,23 +127,23 @@ def load_brands() -> Reference:
 
 
 def load_segments() -> Reference:
-    return _vocabulary("segment", "brands.yaml", "segments")
+    return _vocabulary("segments", "brands.yaml", "segments")
 
 
 def load_tiers() -> Reference:
-    return _vocabulary("tier", "brands.yaml", "tiers")
+    return _vocabulary("tiers", "brands.yaml", "tiers")
 
 
 def load_categories() -> Reference:
-    return _entries("category", "categories.yaml", "categories")
+    return _entries("categories", "categories.yaml", "categories")
 
 
 def load_genders() -> Reference:
-    return _entries("gender", "genders.yaml", "genders")
+    return _entries("genders", "genders.yaml", "genders")
 
 
 def load_countries() -> Reference:
-    return _entries("country", "countries.yaml", "countries", attributes=("name",))
+    return _entries("countries", "countries.yaml", "countries", attributes=("name",))
 
 
 def load_all() -> list[Reference]:

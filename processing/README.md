@@ -1,7 +1,7 @@
 # processing
 
 Turns the staged crawls in `../dismantling/data/staging/` into clean parquet
-tables under `data/processed/`.
+tables under `data/processed/`, ready to load into Snowflake.
 
 ```bash
 .venv/bin/pip install -r requirements.txt
@@ -10,7 +10,45 @@ JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python -m scripts.process --
 ```
 
 Spark needs a JVM; 21 is what Spark 4 wants. `--dry-run` builds and reports
-every table but writes no model tables.
+every table but writes no data tables.
+
+## Where this stage stops
+
+**This stage produces clean data, not a model.** No facts, no dimensions, no
+keys. Snowflake loads these parquets into a staging schema, assigns the primary
+and foreign keys, and derives the analytical star schema of
+`../img/amara-analystical-data-diagram.png` from there.
+
+That is why nothing is named `dim_` or `fact_`, and why every column holds a
+natural value in upper case rather than a surrogate id: `products.brand` is
+`RICK OWENS`, not `4471`. Snowflake does the keying, so it needs something
+human to key on.
+
+## Data tables
+
+| table | grain | rows |
+|---|---|---:|
+| `retailers` | one per retailer | 50 |
+| `dates` | one per observation date | 2 |
+| `products` | one per product per retailer — what the garment *is* | 216,926 |
+| `variants` | one per variant per crawl — what it *costs* and whether it's in stock | 2,321,812 |
+
+The split is deliberate. A product is a description and does not change between
+crawls, so it has no date; a variant is an observation and carries one. Build a
+fact from `variants`, at whatever grain the analysis wants.
+
+```
+variants: variant, product, retailer, date, sku, size, color,
+          price, original_price, discount, available
+```
+
+`product` + `retailer` joins back to `products`. Variants of a product with no
+size option — fragrance, homeware — keep a null size rather than disappearing;
+they still carry a price.
+
+Sizes stay on the variant rather than in a bridge table, because that is where
+they mean something: 27.3% of products have some sizes in stock and others
+not, and a bridge of bare size strings cannot express that.
 
 ## Reference data
 
@@ -20,9 +58,9 @@ wrote, and appends whatever is new:
 
 ```
 Reference data
-  dim_brand     263 values  (+263 new)
-  category       24 values  (unchanged)
-  country        12 values  (+2 new)
+  brands        263 values  (+263 new)
+  categories     24 values  (unchanged)
+  countries      12 values  (+2 new)
 ```
 
 Editing a YAML is how a vocabulary changes. A value is never removed — rows
@@ -31,19 +69,19 @@ compare against, so everything is new.
 
 | file | writes | what it does |
 |---|---|---|
-| `brands.yaml` | `dim_brand`, `segment`, `tier` | the allowlist **and** the classification |
-| `categories.yaml` | `category` | folds 886 raw spellings into 24 categories |
-| `genders.yaml` | `gender` | folds `mens`, `Male`, `Gender: Men` into `MEN` |
-| `countries.yaml` | `country` | the ISO codes retailers report |
+| `brands.yaml` | `brands`, `segments`, `tiers` | the allowlist **and** the classification |
+| `categories.yaml` | `categories` | folds 886 raw spellings into 24 categories |
+| `genders.yaml` | `genders` | folds `mens`, `Male`, `Gender: Men` into `MEN` |
+| `countries.yaml` | `countries` | the ISO codes retailers report |
 
 **`brands.yaml` decides the size of every table.** A product whose vendor is
 not listed is dropped: 336,515 staged products become 216,926. Adding a brand
 is three lines, and order does not matter.
 
 `color`, `size` and `material` deliberately have no reference file. They are
-open vocabularies — 9,315 colours, 2,533 sizes across four incompatible
-scales, and materials that are fabric compositions like `74%WOOL,26%SILK`
-rather than names. They stay plain string columns, cleaned and upper-cased.
+open vocabularies — 6,519 colours, 1,806 sizes across four incompatible scales,
+and materials that are fabric compositions like `74%WOOL,26%SILK` rather than
+names. They stay plain string columns, cleaned and upper-cased.
 
 Every run reports what the vocabularies did not recognise, most frequent
 first. That report is how the YAML grows:
@@ -53,29 +91,14 @@ first. That report is how the YAML grows:
   unmatched product_type: Lifestyle (1,437), Product Look (1,169), ...
 ```
 
-## Model tables
-
-The data-bearing tables of `../img/amara-analystical-data-diagram.png`:
-
-| table | grain | rows |
-|---|---|---:|
-| `dim_retailer` | one per retailer | 50 |
-| `dim_date` | one per observation date | 2 |
-| `dim_product` | one per product per crawl | 216,926 |
-| `fact_product_observation` | price and availability, per product per date | 216,926 |
-| `size_to_product` | one per product per size | 2,284,648 |
-
-The remaining lookups and every primary and foreign key are Snowflake's, so
-these columns hold **natural values in upper case**, not surrogate ids:
-`dim_product.brand` is `RICK OWENS`, not `4471`.
-
 ## Cleaning
 
 This is the only stage that changes a value. Ingestion stores what a store
 sent; dismantling only reshapes it.
 
 - **Case.** Every name is upper-cased, so `Rick Owens`, `RICK OWENS` and
-  `rick owens` are one brand rather than three.
+  `rick owens` are one brand rather than three. Product titles and SKUs keep
+  their case — they are prose and identifiers, not categories.
 - **Matching** folds case, accents and punctuation, so `ACNE STUDIOS`,
   `Acne Studios` and `Alaïa`/`ALAIA` resolve without an alias between them.
   An alias is only needed where the words differ — `YSL` → `SAINT LAURENT`.
@@ -84,12 +107,15 @@ sent; dismantling only reshapes it.
   `Gender: Women` tag (81K) and a bare `mens` tag (238K). Folding all three
   took coverage from 16% to 72%. A product declaring both Men and Women is
   `UNISEX`, not whichever came first.
-- **Money.** Non-positive prices become null: 3,422 variants price at `0.00`
+- **Money.** Non-positive prices become null: 1.8% of variants price at `0.00`
   and read as free, or as a 100% discount against `compare_at_price`.
 - **Discounts.** `original_price` is set only where a store charges less than
   its stated normal price. Beyond `MAX_PLAUSIBLE_DISCOUNT` (95%) the
   comparison is an artifact — Stadium Goods lists a `190.00` sneaker against
   a `compare_at_price` of `25,542,668.00`.
+- **Size and colour slots.** Which of `option1/2/3` holds the size differs per
+  store, so the slot is read from each product's own option list rather than
+  assumed.
 
 ## Coverage
 
@@ -104,9 +130,20 @@ Over the 216,926 products that survive the allowlist:
 | `color` | 25.5% | 6,528 |
 | `material` | 0.8% | 136 |
 
-`brand` is 100% by construction. `category` grows by adding aliases;
-`color` and `material` only appear where a store declares them as a variant
-option, and both sit unlabelled in `body_html` on many more products.
+And over their 2,321,812 variants:
+
+| column | filled | distinct |
+|---|---:|---:|
+| `available` | 100.0% | 2 |
+| `sku` | 99.9% | — |
+| `size` | 99.6% | 1,806 |
+| `price` | 98.2% | — |
+| `original_price` | 18.3% | — |
+| `color` | 17.8% | 6,519 |
+
+`brand` is 100% by construction. `category` grows by adding aliases. Colour
+sits on both tables and means different things: on `products` it is every
+colourway the product lists, on `variants` the one that variant is.
 
 ## Layout
 
@@ -114,7 +151,7 @@ option, and both sit unlabelled in `body_html` on many more products.
 scripts/process.py     the CLI, and the run end to end
 scripts/reference.py   YAML vocabularies, and keeping their parquets in step
 scripts/staging.py     reading what dismantling wrote
-scripts/tables.py      the model tables
+scripts/tables.py      the tables this stage writes
 scripts/clean.py       column-level cleaning, and the folding behind matching
 scripts/paths.py       where things live
 ```

@@ -36,10 +36,12 @@ LIGATURES = {"ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "đ": "d", "ł": "l"
 ACCENTED = "áàâäãåéèêëíìîïóòôöõúùûüýñçšž"
 PLAIN = "aaaaaaeeeeiiiiooooouuuuyncsz"
 
-SEASONS = {12: "Winter", 1: "Winter", 2: "Winter",
-           3: "Spring", 4: "Spring", 5: "Spring",
-           6: "Summer", 7: "Summer", 8: "Summer",
-           9: "Autumn", 10: "Autumn", 11: "Autumn"}
+# Upper case like every other controlled value, so `dates.season` reads the
+# same way as `products.category`.
+SEASONS = {12: "WINTER", 1: "WINTER", 2: "WINTER",
+           3: "SPRING", 4: "SPRING", 5: "SPRING",
+           6: "SUMMER", 7: "SUMMER", 8: "SUMMER",
+           9: "AUTUMN", 10: "AUTUMN", 11: "AUTUMN"}
 
 
 # ── folding ─────────────────────────────────────────────────────────────────
