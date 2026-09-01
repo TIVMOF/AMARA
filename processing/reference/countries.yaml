@@ -1,0 +1,19 @@
+# Countries a retailer ships from, as the ISO-3166 alpha-2 code each store
+# reports in its own /meta.json. Twelve appear across the 50 configured sites.
+#
+# The code is the canonical value; the name is carried for readability and is
+# what a report would show.
+
+countries:
+  US: {name: United States}
+  GB: {name: United Kingdom}
+  IT: {name: Italy}
+  FR: {name: France}
+  DE: {name: Germany}
+  NL: {name: Netherlands}
+  SE: {name: Sweden}
+  AT: {name: Austria}
+  ES: {name: Spain}
+  DK: {name: Denmark}
+  BE: {name: Belgium}
+  HU: {name: Hungary}

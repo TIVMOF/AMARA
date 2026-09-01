@@ -1,0 +1,17 @@
+# The genders a product can be sold under.
+#
+# Stores state this three ways: a `Gender` variant option, a `Gender: Women`
+# tag, and a bare `mens` tag. All three are folded against the aliases below.
+# A product declaring more than one resolves to Unisex.
+#
+# Anything unrecognised - `womenswomenstops` is real - leaves gender null.
+
+genders:
+  Men:
+    aliases: [Man, Mens, Men's, Male, Menswear, Uomo]
+  Women:
+    aliases: [Woman, Womens, Women's, Female, Womenswear, Ladies, Donna]
+  Kids:
+    aliases: [Kid, Children, Child, Boys, Girls, Junior, Baby, Bambino]
+  Unisex:
+    aliases: [Uni, All Genders]

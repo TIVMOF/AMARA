@@ -94,6 +94,8 @@ def run_crawl(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
+# ── probing ─────────────────────────────────────────────────────────────────
+
 def run_probe(args: argparse.Namespace) -> int:
     """Classify domains and print a sites/*.yaml starting point for each."""
     fetcher = Fetcher()
@@ -111,6 +113,8 @@ def run_probe(args: argparse.Namespace) -> int:
         print("    " + suggest_yaml(result).replace("\n", "\n    "))
     return 0
 
+
+# ── listing what is configured ──────────────────────────────────────────────
 
 def list_collections(args: argparse.Namespace) -> int:
     """Show what collections a store publishes, largest first.
@@ -143,6 +147,8 @@ def list_sites(args: argparse.Namespace) -> int:
             print(f"     {site.notes}")
     return 0
 
+
+# ── cli ─────────────────────────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(

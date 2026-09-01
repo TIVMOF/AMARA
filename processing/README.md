@@ -5,87 +5,123 @@ tables under `data/processed/`.
 
 ```bash
 .venv/bin/pip install -r requirements.txt
-JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python scripts/processing.py
+JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python -m scripts.process
+JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python -m scripts.process --dry-run
 ```
 
-Spark needs a JVM; 21 is what Spark 4 wants.
+Spark needs a JVM; 21 is what Spark 4 wants. `--dry-run` builds and reports
+every table but writes no model tables.
 
-## What it writes
+## Reference data
 
-The data-bearing tables of the model in `../img/amara-analystical-data-diagram.png`:
+`reference/*.yaml` holds the controlled vocabularies — the values AMARA is
+willing to report on. Each run reads them, compares against what the last run
+wrote, and appends whatever is new:
+
+```
+Reference data
+  dim_brand     263 values  (+263 new)
+  category       24 values  (unchanged)
+  country        12 values  (+2 new)
+```
+
+Editing a YAML is how a vocabulary changes. A value is never removed — rows
+written by an earlier run still point at it. The first run has no parquet to
+compare against, so everything is new.
+
+| file | writes | what it does |
+|---|---|---|
+| `brands.yaml` | `dim_brand`, `segment`, `tier` | the allowlist **and** the classification |
+| `categories.yaml` | `category` | folds 886 raw spellings into 24 categories |
+| `genders.yaml` | `gender` | folds `mens`, `Male`, `Gender: Men` into `MEN` |
+| `countries.yaml` | `country` | the ISO codes retailers report |
+
+**`brands.yaml` decides the size of every table.** A product whose vendor is
+not listed is dropped: 336,515 staged products become 216,926. Adding a brand
+is three lines, and order does not matter.
+
+`color`, `size` and `material` deliberately have no reference file. They are
+open vocabularies — 9,315 colours, 2,533 sizes across four incompatible
+scales, and materials that are fabric compositions like `74%WOOL,26%SILK`
+rather than names. They stay plain string columns, cleaned and upper-cased.
+
+Every run reports what the vocabularies did not recognise, most frequent
+first. That report is how the YAML grows:
+
+```
+  unmatched vendor: Billionaire Boys Club (3,095), MITCHELL & NESS (2,752), ...
+  unmatched product_type: Lifestyle (1,437), Product Look (1,169), ...
+```
+
+## Model tables
+
+The data-bearing tables of `../img/amara-analystical-data-diagram.png`:
 
 | table | grain | rows |
 |---|---|---:|
 | `dim_retailer` | one per retailer | 50 |
 | `dim_date` | one per observation date | 2 |
-| `dim_product` | one per product per crawl | 336,515 |
-| `fact_product_observation` | price and availability, per product per date | 336,515 |
-| `size_to_product` | one per product per size | 2,964,643 |
+| `dim_product` | one per product per crawl | 216,926 |
+| `fact_product_observation` | price and availability, per product per date | 216,926 |
+| `size_to_product` | one per product per size | 2,284,648 |
 
-**The lookup tables are not written here** — `dim_brand`, `dim_category`,
-`size`, `style`, `tier`, `gender`, `color`, `material`, `country`. Each is the
-distinct values of a column this job already produces, and Snowflake derives
-them along with every primary and foreign key. So these columns hold natural
-values, not surrogate ids: `dim_product.brand` is `"Rick Owens"`, not `4471`.
-
-`brands.yaml` is reference data for the same reason. It carries 263 brands on
-three axes — segment, tier, styles — and populates `dim_brand`, `tier`,
-`style` and `style_to_brand` once it is loaded into Snowflake. Nothing in this
-job reads it.
+The remaining lookups and every primary and foreign key are Snowflake's, so
+these columns hold **natural values in upper case**, not surrogate ids:
+`dim_product.brand` is `RICK OWENS`, not `4471`.
 
 ## Cleaning
 
-This is the only stage that changes a value. Ingestion stores what the store
-sent; dismantling only reshapes it. By the time data arrives here it is as
-inconsistent as 50 storefronts can make it.
+This is the only stage that changes a value. Ingestion stores what a store
+sent; dismantling only reshapes it.
 
-- **Case.** 39% of vendor strings arrive as `RICK OWENS`, which would sit
-  beside `Rick Owens` from another store as a second brand. A value is
-  title-cased only when it is entirely upper case, so `A.P.C.`, `nanushka` and
-  `HOKA ONE ONE` are left alone rather than mangled by a blanket `initcap`.
-- **Whitespace.** Trimmed, runs collapsed, and empty strings become null —
-  otherwise `""` and `NULL` become two rows in whatever lookup Snowflake builds.
-- **Gender.** Stated three ways: a `Gender` option (307 products), a
-  `Gender: Women` tag (81K occurrences) and a bare `mens` tag (238K). All three
-  are folded together, which is the difference between 16% and 72% coverage. A
-  product carrying both `Gender: Men` and `Gender: Women` resolves to `Unisex`
-  rather than whichever tag came first.
-- **Money.** 3,422 variants price at `0.00` — gift cards, placeholders,
-  unreleased stock. Kept as zero they read as free, and against a
-  `compare_at_price` they produce a 100% discount that is not a sale. Non-
-  positive money becomes null.
-- **Discounts.** `original_price` is set only where the store is genuinely
-  charging less than its stated normal price. Shopify stores routinely set
-  `compare_at_price` equal to `price`. Beyond `MAX_PLAUSIBLE_DISCOUNT` (95%) the
-  comparison is discarded as an artifact: Stadium Goods lists a `190.00`
-  sneaker against a `compare_at_price` of `25,542,668.00`.
+- **Case.** Every name is upper-cased, so `Rick Owens`, `RICK OWENS` and
+  `rick owens` are one brand rather than three.
+- **Matching** folds case, accents and punctuation, so `ACNE STUDIOS`,
+  `Acne Studios` and `Alaïa`/`ALAIA` resolve without an alias between them.
+  An alias is only needed where the words differ — `YSL` → `SAINT LAURENT`.
+- **Whitespace.** Trimmed, runs collapsed, empty strings become null.
+- **Gender.** Stated three ways — a `Gender` option (307 products), a
+  `Gender: Women` tag (81K) and a bare `mens` tag (238K). Folding all three
+  took coverage from 16% to 72%. A product declaring both Men and Women is
+  `UNISEX`, not whichever came first.
+- **Money.** Non-positive prices become null: 3,422 variants price at `0.00`
+  and read as free, or as a 100% discount against `compare_at_price`.
+- **Discounts.** `original_price` is set only where a store charges less than
+  its stated normal price. Beyond `MAX_PLAUSIBLE_DISCOUNT` (95%) the
+  comparison is an artifact — Stadium Goods lists a `190.00` sneaker against
+  a `compare_at_price` of `25,542,668.00`.
 
 ## Coverage
 
-What the sources actually support, measured over all 336,515 products:
+Over the 216,926 products that survive the allowlist:
 
 | column | filled | distinct |
 |---|---:|---:|
-| `name` | 100.0% | 301,736 |
-| `brand` | 100.0% | 2,792 |
-| `category` | 97.4% | 959 |
-| `gender` | 71.9% | 4 |
-| `color` | 30.8% | 9,954 |
-| `material` | 0.5% | 148 |
+| `name` | 100.0% | 192,115 |
+| `brand` | 100.0% | 219 |
+| `category` | 89.7% | 24 |
+| `gender` | 72.0% | 4 |
+| `color` | 25.5% | 6,528 |
+| `material` | 0.8% | 136 |
 
-`color` and `material` are only populated where a store declares them as a
-variant option. Both appear unlabelled in `body_html` on many more products,
-and extracting them from prose is a separate job. `material` is kept as a
-column because the model has one, not because it is usable yet.
+`brand` is 100% by construction. `category` grows by adding aliases;
+`color` and `material` only appear where a store declares them as a variant
+option, and both sit unlabelled in `body_html` on many more products.
+
+## Layout
+
+```
+scripts/process.py     the CLI, and the run end to end
+scripts/reference.py   YAML vocabularies, and keeping their parquets in step
+scripts/staging.py     reading what dismantling wrote
+scripts/tables.py      the model tables
+scripts/clean.py       column-level cleaning, and the folding behind matching
+scripts/paths.py       where things live
+```
 
 ## Reading the staged files
 
-Two traps, both already handled in `read_staging`:
-
-- `crawl.json` is one indented object, so it needs `multiLine`. Without it
-  every line comes back as `_corrupt_record`.
-- Its `vendors` field used to be keyed by vendor name, which made Spark infer
-  one column per vendor and then fail outright where two spellings differed
-  only by case — `032c` and `032C` are both real. Dismantling now emits a list
-  of records, and this job declares `CRAWL_SCHEMA` explicitly so inference
-  never runs on that file at all.
+Two traps, both handled in `staging.py`: `crawl.json` is one indented object
+and needs `multiLine`, and its schema is declared rather than inferred —
+`vendors` used to be keyed by vendor name, which made Spark infer a column per
+vendor and then fail where two spellings differed only by case.

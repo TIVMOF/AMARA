@@ -1,0 +1,1154 @@
+# Brands AMARA keeps. A product whose vendor is not listed here is dropped, so
+# this file is the allowlist as well as the classification.
+#
+# To add a brand, add one entry anywhere. Nothing is grouped and order does not
+# matter:
+#
+#   Acne Studios:
+#     segment: Contemporary Designer
+#     tier: Premium
+#     aliases: [Acne]          # optional: other spellings a store uses
+#
+# `segment` and `tier` must appear in the vocabularies below - a typo fails at
+# load rather than inventing a value. Matching folds case, accents and
+# punctuation, so ACNE STUDIOS and Acne Studios need no alias between them.
+#
+# `styles` is carried through from the earlier grouped file. Nothing reads it
+# yet; it is what style_to_brand in the model will be built from.
+
+segments:
+  - Luxury House
+  - Designer
+  - Contemporary Designer
+  - Streetwear
+  - Sportswear
+  - Outdoor
+  - Casual
+  - High Street
+  - Denim
+  - Basics
+
+
+tiers:
+  - High Luxury
+  - Luxury
+  - Premium
+  - Mainstream
+
+
+styles:
+  - Avant-Garde
+  - Contemporary
+  - Lifestyle
+  - Occasion
+  - Minimalist
+  - Classic
+  - Glamour
+  - Feminine
+  - Casual
+  - Street
+  - Performance
+  - Technical
+  - Heritage
+
+
+brands:
+  "& Other Stories":
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  1017 ALYX 9SM:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Technical]
+    aliases: [ALYX, Alyx Studio]
+  44 Label Group:
+    segment: Streetwear
+    tier: Premium
+    styles: [Contemporary, Street]
+    aliases: [44 Label, 44LABEL GROUP]
+  7 For All Mankind:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  A Bathing Ape:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [BAPE, Bape]
+  A.EMERY:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  A.P.C.:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+    aliases: [APC, A.P.C]
+  Abercrombie & Fitch:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Acne Studios:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  Adidas:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+    aliases: [adidas Originals, Y-3, Adidas Y-3, adidas Performance]
+  Aeyde:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  AG Jeans:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  AGOLDE:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  Alaïa:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Alexander McQueen:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Avant-Garde]
+    aliases: [McQueen]
+  Alexander Wang:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  AllSaints:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  American Eagle:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  AMI Paris:
+    segment: Designer
+    tier: Premium
+    styles: [Casual]
+    aliases: [AMI, Ami]
+  Amina Muaddi:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Amiri:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+  Ancient Greek Sandals:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Heritage]
+  Ann Demeulemeester:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Aquazzura:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Arc'teryx:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+    aliases: [Arcteryx, Arc'teryx Veilance, Arcteryx Veilance, Veilance]
+  Arket:
+    segment: Casual
+    tier: Premium
+    styles: [Minimalist]
+  ASICS:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+    aliases: [ASICS SportStyle, Asics Sportstyle]
+  Autry:
+    segment: Designer
+    tier: Premium
+    styles: [Heritage]
+  Axel Arigato:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  Aya Muse:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Balenciaga:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Street]
+  Balmain:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Banana Republic:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Berluti:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Bershka:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Birkenstock:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage]
+  Bottega Veneta:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+  Brioni:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Brunello Cucinelli:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Burberry:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Heritage]
+  BY FAR:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  C&A:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  C.P. Company:
+    segment: Streetwear
+    tier: Premium
+    styles: [Technical]
+  Calvin Klein:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Canada Goose:
+    segment: Outdoor
+    tier: Luxury
+    styles: [Technical]
+  Carhartt WIP:
+    segment: Streetwear
+    tier: Premium
+    styles: [Heritage]
+    aliases: [Carhartt]
+  Casablanca:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  Castañer:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Heritage]
+  Castore:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  Cecilie Bahnsen:
+    segment: Designer
+    tier: Luxury
+    styles: [Feminine]
+  Celine:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+  Champion:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Casual]
+    aliases: [Champion Reverse Weave]
+  Chanel:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Chloé:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Feminine]
+  Christian Louboutin:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Christopher Esber:
+    segment: Designer
+    tier: Luxury
+    styles: [Feminine]
+  Church's:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+    aliases: [Church's England]
+  Citizens of Humanity:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+    aliases: [Citizens of Humanity Mens]
+  Clarks:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage]
+  Claudie Pierlot:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Columbia:
+    segment: Outdoor
+    tier: Premium
+    styles: [Heritage]
+  Comme des Garçons:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+    aliases: [Comme des Garcons, Comme Des Garcons Homme Plus, Comme des Garçons Homme Plus, CDG]
+  Common Projects:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  Converse:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Casual]
+  COS:
+    segment: Casual
+    tier: Premium
+    styles: [Minimalist]
+  Courrèges:
+    segment: Designer
+    tier: Premium
+    styles: [Avant-Garde]
+  Cult Gaia:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+  DeMellier:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Destin:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Diesel:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  Dior:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Dolce & Gabbana:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+    aliases: [Dolce and Gabbana, D&G]
+  Dr. Martens:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage]
+    aliases: [Dr Martens, Doc Martens]
+  Dragon Diffusion:
+    segment: Designer
+    tier: Premium
+    styles: [Heritage]
+  Dries Van Noten:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Drôle De Monsieur:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  Déhanche:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Casual]
+  DÔEN:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+  Edwin:
+    segment: Denim
+    tier: Mainstream
+    styles: [Heritage]
+  Emporio Armani:
+    segment: Basics
+    tier: Premium
+    styles: [Minimalist]
+  Enfants Riches Déprimés:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Etro:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]
+  Eytys:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  Faithfull:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+  FARM Rio:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Casual]
+  Fear of God:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+  Fear of God Essentials:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [Essentials]
+  Fendi:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Ferragamo:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Fila:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Casual]
+  Filling Pieces:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  Fjällräven:
+    segment: Outdoor
+    tier: Premium
+    styles: [Heritage]
+  Frame:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  G-Star RAW:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  G.H. Bass:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage]
+    aliases: [G.H. Bass & Co., GH Bass, Bass Weejuns]
+  Gallery Dept.:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+    aliases: [Gallery Dept, GALLERY DEPARTMENT LLC]
+  Ganni:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Casual]
+  Gap:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Gianvito Rossi:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Giorgio Armani:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Giuseppe Zanotti:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Givenchy:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Golden Goose:
+    segment: Designer
+    tier: Premium
+    styles: [Heritage]
+    aliases: [Golden Goose Deluxe Brand]
+  Gucci:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Street]
+    aliases: [Gucci Eyewear]
+  H&M:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Haglöfs:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+  Hanro:
+    segment: Basics
+    tier: Premium
+    styles: [Minimalist]
+  Helly Hansen:
+    segment: Outdoor
+    tier: Premium
+    styles: [Heritage]
+  Hermès:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Hogan:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Hoka:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+    aliases: [HOKA ONE ONE, Hoka One One]
+  Homme Plissé Issey Miyake:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+    aliases: [Homme Plisse Issey Miyake, Issey Miyake]
+  Hugo Boss:
+    segment: Casual
+    tier: Premium
+    styles: [Classic]
+  Human Made:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Intimissimi:
+    segment: Basics
+    tier: Mainstream
+    styles: [Casual]
+  Isabel Marant:
+    segment: Designer
+    tier: Premium
+    styles: [Casual]
+    aliases: [Etoile, Isabel Marant Etoile, Étoile Isabel Marant]
+  Jack Wolfskin:
+    segment: Outdoor
+    tier: Premium
+    styles: [Heritage]
+  Jacquemus:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  Jil Sander:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Minimalist]
+  Jimmy Choo:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Johanna Ortiz:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]
+  Jordan:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+    aliases: [Air Jordan, Jordan Brand]
+  Junya Watanabe:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  JW Anderson:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Avant-Garde]
+  JW Pei:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Kenzo:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  Khaite:
+    segment: Designer
+    tier: Luxury
+    styles: [Minimalist]
+  Kith:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Kiton:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Lacoste:
+    segment: Casual
+    tier: Premium
+    styles: [Classic]
+  Lanvin:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Lardini:
+    segment: Designer
+    tier: Premium
+    styles: [Classic]
+  Lee:
+    segment: Denim
+    tier: Mainstream
+    styles: [Heritage]
+  Lemaire:
+    segment: Designer
+    tier: Luxury
+    styles: [Minimalist]
+  Levi's:
+    segment: Denim
+    tier: Mainstream
+    styles: [Heritage]
+    aliases: [Levis, Levi Strauss]
+  Loewe:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+  Loro Piana:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Louis Vuitton:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Lululemon:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  MACH & MACH:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Maison Kitsuné:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Casual]
+  Maison Margiela:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Avant-Garde]
+    aliases: [MM6, MM6 Maison Margiela, Margiela]
+  Maison Mihara Yasuhiro:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+    aliases: [Mihara Yasuhiro, MIHARAYASUHIRO]
+  Maje:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Mammut:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+  Mango:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Manolo Blahnik:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Marine Serre:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  Marni:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Massimo Dutti:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Matteau:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Max Mara:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+    aliases: [S Max Mara, Max Mara Leisure, Weekend Max Mara]
+  Missoni:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Miu Miu:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+  Moncler:
+    segment: Outdoor
+    tier: Luxury
+    styles: [Technical]
+    aliases: [Moncler Grenoble]
+  Moon Boot:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+  Mother:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+    aliases: [Mother Denim]
+  Nanushka:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  New Balance:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  Next:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Nike:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+    aliases: [Nike Sportswear, NikeLab, Nike SB]
+  NN07:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Noir Kei Ninomiya:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Norma Kamali:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Glamour]
+  Norrøna:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+    aliases: [Norrona]
+  Nudie Jeans:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  Oakley:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  Off-White:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+    aliases: [Off White, Off-White c/o Virgil Abloh]
+  "On":
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+    aliases: [On Running, On Running Shoes]
+  Our Legacy:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+    aliases: [Our Legacy Work Shop]
+  Paige:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  Palm Angels:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+  Paris Texas:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Glamour]
+  Patagonia:
+    segment: Outdoor
+    tier: Premium
+    styles: [Heritage]
+  Paul Smith:
+    segment: Designer
+    tier: Premium
+    styles: [Casual]
+  Pauline Dujancourt:
+    segment: Designer
+    tier: Luxury
+    styles: [Feminine]
+  Peak Performance:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+  Polo Ralph Lauren:
+    segment: Casual
+    tier: Premium
+    styles: [Classic]
+  Posse:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+  Prada:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+  Premiata:
+    segment: Designer
+    tier: Premium
+    styles: [Heritage]
+  Proenza Schouler:
+    segment: Designer
+    tier: Luxury
+    styles: [Minimalist]
+    aliases: [Proenza Schouler White Label]
+  Pucci:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Pull&Bear:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Puma:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Performance]
+  R13:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  Rabanne:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Avant-Garde]
+  Ralph Lauren:
+    segment: Casual
+    tier: Premium
+    styles: [Classic]
+    aliases: [Ralph Lauren Purple Label]
+  Rapha:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  Rebecca Vallance:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]
+  Reebok:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Performance]
+  Reiss:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  René Caovilla:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Replay:
+    segment: Denim
+    tier: Mainstream
+    styles: [Heritage]
+  Represent:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Reserved:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Retrofete:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Glamour]
+  Rhude:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+  Rick Owens:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Rick Owens DRKSHDW:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+    aliases: [DRKSHDW, DRKSHDW by Rick Owens]
+  RIER:
+    segment: Designer
+    tier: Premium
+    styles: [Minimalist]
+  River Island:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  ROTATE Birger Christensen:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Glamour]
+    aliases: [ROTATE BIRGER CHRISTENSEN, Rotate]
+  Róhe:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Saint Laurent:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+    aliases: [Yves Saint Laurent, Saint Laurent Paris, YSL]
+  Salomon:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical]
+  Sandro:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Schiaparelli:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Scotch & Soda:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Self-Portrait:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+    aliases: [Self Portrait]
+  Serapian:
+    segment: Designer
+    tier: Luxury
+    styles: [Classic]
+  Sergio Rossi:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  SHUSHU/TONG:
+    segment: Designer
+    tier: Luxury
+    styles: [Feminine]
+  SIMKHAI:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]
+  Simon Miller:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Simone Rocha:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Feminine]
+  Skims:
+    segment: Basics
+    tier: Premium
+    styles: [Minimalist]
+  Soeur:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+  Soft Goat:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Solace London:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Occasion]
+  Song for the Mute:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde, Street]
+    aliases: [SONG FOR THE MUTE]
+  St. Agni:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Stella McCartney:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Minimalist]
+  Stone Island:
+    segment: Streetwear
+    tier: Premium
+    styles: [Technical]
+  Stradivarius:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Stüssy:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [Stussy]
+  Supreme:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Ted Baker:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  The Attico:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]
+  The Frankie Shop:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  The North Face:
+    segment: Outdoor
+    tier: Premium
+    styles: [Heritage]
+    aliases: [TNF, The North Face Purple Label]
+  The Row:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Minimalist]
+  Thom Browne:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Timberland:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage]
+  Tod's:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Tom Ford:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Classic]
+  Tom Wood:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist]
+  Tommy Hilfiger:
+    segment: Casual
+    tier: Premium
+    styles: [Casual]
+  Tory Burch:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Contemporary, Lifestyle]
+  Toteme:
+    segment: Designer
+    tier: Luxury
+    styles: [Minimalist]
+    aliases: [Totême, Toteme - INT]
+  True Religion:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
+  UGG:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage]
+  Uma Wang:
+    segment: Contemporary Designer
+    tier: Luxury
+    styles: [Avant-Garde, Minimalist]
+  Umbro:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Performance]
+  Under Armour:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  Undercover:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Uniqlo:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Valentino:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+    aliases: [Valentino Garavani]
+  Vans:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Casual]
+  Veja:
+    segment: Designer
+    tier: Premium
+    styles: [Casual]
+  Versace:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  Victoria Beckham:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]
+  Victoria's Secret:
+    segment: Basics
+    tier: Mainstream
+    styles: [Casual]
+  visvim:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Vivienne Westwood:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Vuori:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance]
+  Weekday:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Willy Chavarria:
+    segment: Designer
+    tier: Premium
+    styles: [Street]
+  Wrangler:
+    segment: Denim
+    tier: Mainstream
+    styles: [Heritage]
+  Yohji Yamamoto:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde]
+  Zara:
+    segment: High Street
+    tier: Mainstream
+    styles: [Casual]
+  Zegna:
+    segment: Luxury House
+    tier: High Luxury
+    styles: [Classic]
+  Zimmermann:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour]

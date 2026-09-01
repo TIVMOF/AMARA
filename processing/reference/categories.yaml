@@ -1,0 +1,75 @@
+# Product categories AMARA reports on.
+#
+# Stores name the same thing 886 different ways - SHOES, FOOTWEAR, SNEAKERS,
+# LIFESTYLE SHOES and WOMEN'S FOOTWEAR are one category. Each entry below is a
+# canonical category and the raw values that mean it.
+#
+# To add one, add an entry. To fold a new spelling into an existing category,
+# add it to that category's `aliases`. Matching folds case, punctuation and
+# spacing, so `T-Shirts`, `t shirts` and `TSHIRTS` all reach `t-shirts` without
+# needing an alias between them.
+#
+# A product whose category matches nothing here keeps a null category and is
+# reported at the end of the run, most frequent first - that report is how this
+# file grows. The product itself is kept.
+
+categories:
+  Shoes:
+    aliases: [Footwear, Sneakers, Lifestyle Shoes, Low Top Sneakers, High Top Sneakers,
+              Running Shoes, Boots, Sandals, Sandals And Slippers, Slippers, Trainers,
+              Women's Footwear, Womens Footwear, Men's Footwear, Mens Footwear,
+              Kid's Footwear, Kids Footwear, Scarpe, Calzature]
+  T-Shirts:
+    aliases: [Tees, Tee, Tshirt, Tshirts, Short Sleeve Tees, Long Sleeve Tees,
+              T-Shirts & Tank Tops, T-Shirts & Polos, Graphic Tees, T Shirts]
+  Tops:
+    aliases: [Wovens, Tank Tops, Tanks/Jerseys, Jerseys, Active Tops, Polos, Blouses,
+              Camicie, Bodysuits]
+  Shirts:
+    aliases: [Button Up Shirts, Button Down Shirts, Button-Ups, Dress Shirts]
+  Knitwear:
+    aliases: [Sweaters, Maglie, Jumpers, Cardigans, Maglieria]
+  Hoodies:
+    aliases: [Hoodies/Fleece, Sweatshirts, Hoodies & Sweatshirts, Fleece,
+              Crewnecks, Sweats, Felpe]
+  Outerwear:
+    aliases: [Jackets, Jackets/Outerwear, Coats And Jackets, Coats, Giacca, Giacche,
+              Giubbotti, Parkas, Vests, Puffers]
+  Pants:
+    aliases: [Trousers, Pantaloni, Sweatpants, Leggings, Bottoms, Chinos,
+              Track Pants, Joggers]
+  Jeans:
+    aliases: [Denim, Denim Pants]
+  Shorts:
+    aliases: [Swim Shorts, Swimwear, Costumi]
+  Dresses:
+    aliases: [Abiti, Dress]
+  Skirts:
+    aliases: [Gonne]
+  Accessories:
+    aliases: [Accessori, Small Leather Goods, Belts, Gloves, Scarves, Wallets, Keychains]
+  Bags:
+    aliases: [Tote Bags, Bags And Backpacks, Backpacks, Borse, Handbags, Luggage]
+  Headwear:
+    aliases: [Hats, Caps, Beanies, Cappelli]
+  Eyewear:
+    aliases: [Sunglasses, Occhiali Da Sole, Occhiali, Glasses, Optical]
+  Jewellery:
+    aliases: [Jewelry, Fine Jewellery, Fine Jewelry, Demi-Fine Jewellery, Necklaces,
+              Bracelets, Earrings, Rings, Gioielli]
+  Watches:
+    aliases: [Orologi, Timepieces]
+  Socks:
+    aliases: [Crew Socks, Hosiery]
+  Underwear:
+    aliases: [Intimates, Lingerie, Bras, Briefs, Boxers, Shapewear, Shapewear Bottoms,
+              Shapewear Tops]
+  Clothing:
+    aliases: [Apparel, Ready To Wear, Rtw, Abbigliamento, Women's Apparel,
+              Womens Apparel, Men's Apparel, Mens Apparel, Kid's Apparel, Kids Apparel]
+  Homeware:
+    aliases: [Home, Furniture, Textiles, Casa]
+  Books:
+    aliases: [Books And Magazines, Magazines, Print]
+  Beauty:
+    aliases: [Fragrance, Skincare, Self-Care, Grooming, Profumi]
