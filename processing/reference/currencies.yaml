@@ -1,0 +1,12 @@
+# Currencies retailers price in, as the ISO-4217 code each store reports in its
+# own /meta.json. Four appear across the 50 configured sites.
+#
+# The code is the value, the way a category name is: `crawls.currency` and
+# `variants.currency` both hold USD. Nothing here converts between them - a sum
+# over prices from more than one currency is wrong until Snowflake converts it.
+
+currencies:
+  - USD
+  - EUR
+  - GBP
+  - SEK

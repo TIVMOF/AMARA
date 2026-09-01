@@ -28,6 +28,7 @@ human to key on.
 
 | table | grain | rows |
 |---|---|---:|
+| `crawls` | one per crawl run — provenance, and the currency | 50 |
 | `retailers` | one per retailer | 50 |
 | `dates` | one per observation date | 2 |
 | `products` | one per product per retailer — what the garment *is* | 216,926 |
@@ -39,10 +40,13 @@ fact from `variants`, at whatever grain the analysis wants.
 
 ```
 variants: variant, product, retailer, date, sku, size, color,
-          price, original_price, discount, available
+          price, currency, original_price, discount, available
 ```
 
-`product` + `retailer` joins back to `products`. Variants of a product with no
+`product` + `retailer` joins back to `products`. `currency` comes down from
+the crawl — Shopify states it once per store, and the 50 retailers quote in
+USD, EUR, GBP and SEK, so no sum over `price` is meaningful without it.
+ Variants of a product with no
 size option — fragrance, homeware — keep a null size rather than disappearing;
 they still carry a price.
 
@@ -73,6 +77,11 @@ compare against, so everything is new.
 | `categories.yaml` | `categories` | folds 886 raw spellings into 24 categories |
 | `genders.yaml` | `genders` | folds `mens`, `Male`, `Gender: Men` into `MEN` |
 | `countries.yaml` | `countries` | the ISO codes retailers report |
+| `currencies.yaml` | `currencies` | the ISO codes retailers price in |
+
+`countries` is the one vocabulary keyed on something other than `name`: its
+canonical value is the ISO code, so `retailers.country` holds `US` and joins
+to `countries.code`. `countries.name` is the readable label beside it.
 
 **`brands.yaml` decides the size of every table.** A product whose vendor is
 not listed is dropped: 336,515 staged products become 216,926. Adding a brand

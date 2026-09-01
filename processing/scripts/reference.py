@@ -38,10 +38,13 @@ class Reference:
     lookup: dict[str, str] = field(default_factory=dict)
     # What the parquet holds: the canonical value plus any attributes.
     rows: list[dict[str, Any]] = field(default_factory=list)
+    # The column holding the canonical value - what `lookup` resolves to and
+    # what rows are matched on. Countries key on the ISO code, not the name.
+    key: str = "name"
 
     @property
     def values(self) -> list[str]:
-        return [row["name"] for row in self.rows]
+        return [row[self.key] for row in self.rows]
 
 
 def _read(filename: str) -> dict[str, Any]:
@@ -51,21 +54,30 @@ def _read(filename: str) -> dict[str, Any]:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
-def _entries(name: str, filename: str, key: str,
+def _entries(name: str, filename: str, block: str, *, column: str = "name",
              attributes: tuple[str, ...] = ()) -> Reference:
     """Build a Reference from a `{canonical: {aliases: [...], ...}}` block.
 
     The canonical spelling is always its own alias, so a value needs an entry
     under `aliases` only where the words differ - not merely the case or the
     punctuation.
-    """
-    block = _read(filename).get(key) or {}
-    reference = Reference(name=name)
 
-    for canonical, body in block.items():
+    `column` is where the canonical value lands, and is `name` everywhere but
+    countries, whose canonical value is the ISO code and whose `name` is the
+    readable label beside it. An attribute may not be called `column`, or it
+    would overwrite the value every other table joins on.
+    """
+    if column in attributes:
+        raise ValueError(f"{filename}: attribute {column!r} would overwrite the "
+                         f"canonical value")
+
+    entries = _read(filename).get(block) or {}
+    reference = Reference(name=name, key=column)
+
+    for canonical, body in entries.items():
         body = body or {}
         value = str(canonical).upper()
-        row = {"name": value}
+        row = {column: value}
         for attribute in attributes:
             row[attribute] = (str(body[attribute]).upper()
                               if body.get(attribute) is not None else None)
@@ -77,10 +89,10 @@ def _entries(name: str, filename: str, key: str,
     return reference
 
 
-def _vocabulary(name: str, filename: str, key: str) -> Reference:
-    """A Reference over a bare list, used for the axes brands are classified on."""
+def _vocabulary(name: str, filename: str, block: str) -> Reference:
+    """A Reference over a bare list, for vocabularies that are only values."""
     reference = Reference(name=name)
-    for value in _read(filename).get(key) or []:
+    for value in _read(filename).get(block) or []:
         canonical = str(value).upper()
         reference.rows.append({"name": canonical})
         reference.lookup[fold(str(value))] = canonical
@@ -143,13 +155,19 @@ def load_genders() -> Reference:
 
 
 def load_countries() -> Reference:
-    return _entries("countries", "countries.yaml", "countries", attributes=("name",))
+    """Keyed on the ISO code, so tables join on US rather than UNITED STATES."""
+    return _entries("countries", "countries.yaml", "countries",
+                    column="code", attributes=("name",))
+
+
+def load_currencies() -> Reference:
+    return _vocabulary("currencies", "currencies.yaml", "currencies")
 
 
 def load_all() -> list[Reference]:
     """Every vocabulary, in the order the run reports them."""
-    return [load_brands(), load_segments(), load_tiers(),
-            load_categories(), load_genders(), load_countries()]
+    return [load_brands(), load_segments(), load_tiers(), load_categories(),
+            load_genders(), load_countries(), load_currencies()]
 
 
 # ── keeping the parquets in step ───────────────────────────────────────────────
@@ -170,8 +188,8 @@ def sync(spark: SparkSession, reference: Reference) -> tuple[int, int]:
     if (path / "_SUCCESS").exists():
         held = [row.asDict() for row in spark.read.parquet(str(path)).collect()]
 
-    known = {row["name"] for row in held}
-    new = [row for row in reference.rows if row["name"] not in known]
+    known = {row[reference.key] for row in held}
+    new = [row for row in reference.rows if row[reference.key] not in known]
     combined = held + new
     if not combined:
         return 0, 0

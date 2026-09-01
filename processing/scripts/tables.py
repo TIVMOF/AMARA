@@ -13,6 +13,7 @@ from __future__ import annotations
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import (
     array,
+    broadcast,
     col,
     concat_ws,
     dayofmonth,
@@ -111,10 +112,40 @@ def crawl_date() -> Column:
 
 # ── tables ─────────────────────────────────────────────────────────────────────
 
-def retailers(crawls: DataFrame, countries: Reference) -> DataFrame:
+def crawls(staged_crawls: DataFrame, currencies: Reference) -> DataFrame:
+    """crawls - one row per crawl run: what was collected, and in what currency.
+
+    The provenance table. `products_received` against `products_stored` is what
+    deduplication removed, and `short_pages` against `pages` is how much of the
+    walk came back under-full - both are how you tell a retailer shrinking from
+    a crawl running short.
+
+    `name` is the crawl's brand override, set only for the 29 single-brand
+    sites. It is null for a multi-brand retailer, which has no one brand to
+    name.
+    """
+    return (
+        staged_crawls
+        .select(
+            name(col("site")).alias("site"),
+            clean_text(col("base_url")).alias("base_url"),
+            lookup(col("currency"), currencies.lookup).alias("currency"),
+            name(col("brand_override")).alias("name"),
+            crawl_date().alias("date"),
+            col("products_received").cast("int").alias("products_received"),
+            col("products_stored").cast("int").alias("products_stored"),
+            col("pages").cast("int").alias("pages"),
+            col("short_pages").cast("int").alias("short_pages"),
+            col("collections_crawled").cast("int").alias("collections_crawled"),
+        )
+        .dropDuplicates(["site", "date"])
+    )
+
+
+def retailers(staged_crawls: DataFrame, countries: Reference) -> DataFrame:
     """retailers - name, url, country."""
     return (
-        crawls
+        staged_crawls
         .select(
             name(col("site")).alias("name"),
             clean_text(col("base_url")).alias("url"),
@@ -124,10 +155,10 @@ def retailers(crawls: DataFrame, countries: Reference) -> DataFrame:
     )
 
 
-def dates(crawls: DataFrame) -> DataFrame:
+def dates(staged_crawls: DataFrame) -> DataFrame:
     """dates - one row per date any crawl observed."""
     return (
-        crawls
+        staged_crawls
         .select(crawl_date().alias("date"))
         .where(col("date").isNotNull())
         .dropDuplicates(["date"])
@@ -190,7 +221,8 @@ def products(staged: DataFrame, brands: Reference, categories: Reference,
 
 
 def variants(staged_products: DataFrame, staged_variants: DataFrame,
-             catalogue: DataFrame) -> DataFrame:
+             staged_crawls: DataFrame, catalogue: DataFrame,
+             known_currencies: Reference) -> DataFrame:
     """variants - one row per variant per crawl: size, colour, price, stock.
 
     The variant is what a store actually sells and prices, so this is where the
@@ -206,6 +238,9 @@ def variants(staged_products: DataFrame, staged_variants: DataFrame,
     `original_price` is set only where a store is genuinely charging less than
     its stated normal price. Shopify stores routinely set `compare_at_price`
     equal to `price`, or to zero, when nothing is on sale.
+
+    `currency` sits beside `price` because a price without it is just a number:
+    the 50 retailers quote in USD, EUR, GBP and SEK.
     """
     slots = staged_products.select(
         col("id").cast("string").alias("product"),
@@ -231,9 +266,18 @@ def variants(staged_products: DataFrame, staged_variants: DataFrame,
     )
     original = when(discounting, col("compare_at"))
 
+    # Shopify states the currency once per store, not per variant, so it comes
+    # down from the crawl the variant was seen in.
+    currencies = staged_crawls.select(
+        name(col("site")).alias("retailer"),
+        crawl_date().alias("date"),
+        lookup(col("currency"), known_currencies.lookup).alias("currency"),
+    ).dropDuplicates(["retailer", "date"])
+
     return (
         sold
         .join(slots, ["product", "retailer"], "left")
+        .join(broadcast(currencies), ["retailer", "date"], "left")
         # Only variants of products that survived the brand allowlist.
         .join(catalogue.select("product", "retailer"), ["product", "retailer"], "left_semi")
         .select(
@@ -245,6 +289,7 @@ def variants(staged_products: DataFrame, staged_variants: DataFrame,
             slot_value(col("options"), col("size_slot")).alias("size"),
             slot_value(col("options"), col("color_slot")).alias("color"),
             "price",
+            "currency",
             original.alias("original_price"),
             spark_round(
                 when(original.isNotNull(), (original - col("price")) / original * 100), 2

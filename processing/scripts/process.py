@@ -5,12 +5,13 @@
 
 Two kinds of output land in `data/processed/`.
 
-Reference parquets - brands, segments, tiers, categories, genders, countries -
-are the controlled vocabularies in `reference/*.yaml`. Each run appends
-whatever the YAML has gained, so editing a YAML is how a vocabulary changes.
+Reference parquets - brands, segments, tiers, categories, genders, countries,
+currencies - are the controlled vocabularies in `reference/*.yaml`. Each run
+appends whatever the YAML has gained, so editing a YAML is how a vocabulary
+changes.
 
-Data tables - retailers, dates, products, variants - are the crawl itself, made
-clean. This stage stops at clean: it builds no facts and no dimensions. Every
+Data tables - crawls, retailers, dates, products, variants - are the crawl
+itself, made clean. This stage stops at clean: it builds no facts and no dimensions. Every
 column holds a natural value in upper case rather than a surrogate id, so
 Snowflake loads these into a staging schema, assigns the keys, and derives the
 analytical star schema of `img/amara-analystical-data-diagram.png` from there.
@@ -95,13 +96,17 @@ def run(spark: SparkSession, *, dry_run: bool) -> None:
     report_unmatched(staged.products, "vendor", vocabularies["brands"])
     report_unmatched(staged.products, "product_type", vocabularies["categories"])
     report_unmatched(staged.crawls, "country", vocabularies["countries"])
+    report_unmatched(staged.crawls, "currency", vocabularies["currencies"])
 
     print("\nData tables")
+    write(tables.crawls(staged.crawls, vocabularies["currencies"]),
+          "crawls", dry_run=dry_run)
     write(tables.retailers(staged.crawls, vocabularies["countries"]),
           "retailers", dry_run=dry_run)
     write(tables.dates(staged.crawls), "dates", dry_run=dry_run)
     write(catalogue, "products", dry_run=dry_run)
-    write(tables.variants(staged.products, staged.variants, catalogue),
+    write(tables.variants(staged.products, staged.variants, staged.crawls,
+                          catalogue, vocabularies["currencies"]),
           "variants", dry_run=dry_run)
 
     print("\nDone.")
