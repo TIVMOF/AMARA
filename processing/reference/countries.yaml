@@ -1,19 +1,45 @@
 # Countries a retailer ships from, as the ISO-3166 alpha-2 code each store
 # reports in its own /meta.json. Twelve appear across the 50 configured sites.
 #
-# The code is the canonical value; the name is carried for readability and is
-# what a report would show.
+# The code is the canonical value: `retailers.country` holds US, and every join
+# is on US rather than UNITED STATES. The readable name rides alongside in its
+# own column for display, and is listed as an alias so a store reporting the
+# long form still resolves to the code.
 
 countries:
-  US: {name: United States}
-  GB: {name: United Kingdom}
-  IT: {name: Italy}
-  FR: {name: France}
-  DE: {name: Germany}
-  NL: {name: Netherlands}
-  SE: {name: Sweden}
-  AT: {name: Austria}
-  ES: {name: Spain}
-  DK: {name: Denmark}
-  BE: {name: Belgium}
-  HU: {name: Hungary}
+  US:
+    name: United States
+    aliases: [USA, U.S., U.S.A., United States, United States of America]
+  GB:
+    name: United Kingdom
+    aliases: [UK, U.K., United Kingdom, Great Britain, England]
+  IT:
+    name: Italy
+    aliases: [Italy, Italia]
+  FR:
+    name: France
+    aliases: [France]
+  DE:
+    name: Germany
+    aliases: [Germany, Deutschland]
+  NL:
+    name: Netherlands
+    aliases: [Netherlands, The Netherlands, Holland, Nederland]
+  SE:
+    name: Sweden
+    aliases: [Sweden, Sverige]
+  AT:
+    name: Austria
+    aliases: [Austria, Osterreich, Österreich]
+  ES:
+    name: Spain
+    aliases: [Spain, Espana, España]
+  DK:
+    name: Denmark
+    aliases: [Denmark, Danmark]
+  BE:
+    name: Belgium
+    aliases: [Belgium, Belgie, België, Belgique]
+  HU:
+    name: Hungary
+    aliases: [Hungary, Magyarorszag, Magyarország]

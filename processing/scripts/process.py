@@ -1,19 +1,20 @@
-"""Turns staged crawls into clean parquet tables.
+"""Turns staged crawls into clean parquet tables for Snowflake to load.
 
     python -m scripts.process              every staged crawl
     python -m scripts.process --dry-run    build and report, write nothing
 
 Two kinds of output land in `data/processed/`.
 
-Reference parquets - dim_brand, segment, tier, category, gender, country - are
-the controlled vocabularies in `reference/*.yaml`. Each run appends whatever
-the YAML has gained, so editing a YAML is how a vocabulary changes.
+Reference parquets - brands, segments, tiers, categories, genders, countries,
+currencies - are the controlled vocabularies in `reference/*.yaml`. Each run
+appends whatever the YAML has gained, so editing a YAML is how a vocabulary
+changes.
 
-Model tables - dim_retailer, dim_date, dim_product, fact_product_observation
-and size_to_product - are the data-bearing tables of
-`img/amara-analystical-data-diagram.png`. The remaining lookups and every
-primary and foreign key are Snowflake's, so these columns hold natural values
-in upper case rather than surrogate ids.
+Data tables - crawls, retailers, dates, products, variants - are the crawl
+itself, made clean. This stage stops at clean: it builds no facts and no dimensions. Every
+column holds a natural value in upper case rather than a surrogate id, so
+Snowflake loads these into a staging schema, assigns the keys, and derives the
+analytical star schema of `img/amara-analystical-data-diagram.png` from there.
 """
 
 from __future__ import annotations
@@ -71,11 +72,11 @@ def report_unmatched(staged: DataFrame, column: str,
 def write(frame: DataFrame, name: str, *, dry_run: bool) -> None:
     rows = frame.count()
     if dry_run:
-        print(f"  {name:26} {rows:>10,} rows  (not written)")
+        print(f"  {name:12} {rows:>11,} rows  (not written)")
         return
     path = paths.OUTPUT_ROOT / name
     frame.write.mode("overwrite").parquet(str(path))
-    print(f"  {name:26} {rows:>10,} rows  -> {paths.relative(path)}")
+    print(f"  {name:12} {rows:>11,} rows  -> {paths.relative(path)}")
 
 
 def run(spark: SparkSession, *, dry_run: bool) -> None:
@@ -84,27 +85,29 @@ def run(spark: SparkSession, *, dry_run: bool) -> None:
     print(f"\nStaged crawls from {paths.relative(paths.STAGING_ROOT)}")
     staged = staging.read(spark, paths.STAGING_ROOT)
 
-    dim_product = tables.products(
+    catalogue = tables.products(
         staged.products,
-        brands=vocabularies["dim_brand"],
-        categories=vocabularies["category"],
-        genders=vocabularies["gender"],
+        brands=vocabularies["brands"],
+        categories=vocabularies["categories"],
+        genders=vocabularies["genders"],
     ).cache()
 
     print("\nWhat the vocabularies did not recognise")
-    report_unmatched(staged.products, "vendor", vocabularies["dim_brand"])
-    report_unmatched(staged.products, "product_type", vocabularies["category"])
-    report_unmatched(staged.crawls, "country", vocabularies["country"])
+    report_unmatched(staged.products, "vendor", vocabularies["brands"])
+    report_unmatched(staged.products, "product_type", vocabularies["categories"])
+    report_unmatched(staged.crawls, "country", vocabularies["countries"])
+    report_unmatched(staged.crawls, "currency", vocabularies["currencies"])
 
-    print("\nModel tables")
-    write(tables.retailers(staged.crawls, vocabularies["country"]),
-          "dim_retailer", dry_run=dry_run)
-    write(tables.dates(staged.crawls), "dim_date", dry_run=dry_run)
-    write(dim_product.drop("date"), "dim_product", dry_run=dry_run)
-    write(tables.observations(dim_product, staged.variants),
-          "fact_product_observation", dry_run=dry_run)
-    write(tables.sizes(staged.products, staged.variants, dim_product),
-          "size_to_product", dry_run=dry_run)
+    print("\nData tables")
+    write(tables.crawls(staged.crawls, vocabularies["currencies"]),
+          "crawls", dry_run=dry_run)
+    write(tables.retailers(staged.crawls, vocabularies["countries"]),
+          "retailers", dry_run=dry_run)
+    write(tables.dates(staged.crawls), "dates", dry_run=dry_run)
+    write(catalogue, "products", dry_run=dry_run)
+    write(tables.variants(staged.products, staged.variants, staged.crawls,
+                          catalogue, vocabularies["currencies"]),
+          "variants", dry_run=dry_run)
 
     print("\nDone.")
 
@@ -114,7 +117,7 @@ def run(spark: SparkSession, *, dry_run: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dry-run", action="store_true",
-                        help="build every table and report, but write no model tables")
+                        help="build every table and report, but write no data tables")
     args = parser.parse_args()
 
     spark = build_session()

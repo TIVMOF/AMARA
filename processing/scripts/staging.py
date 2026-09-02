@@ -19,8 +19,14 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession
 
 
-# Only what the tables need.
-CRAWL_SCHEMA = "site STRING, base_url STRING, country STRING, scraped_at STRING"
+# Only what the tables need. `listings`, `errors` and `vendors` are nested
+# arrays nothing here reads.
+CRAWL_SCHEMA = """
+    site STRING, base_url STRING, country STRING, currency STRING,
+    brand_override STRING, scraped_at STRING, products_received BIGINT,
+    products_stored BIGINT, pages BIGINT, short_pages BIGINT,
+    collections_crawled BIGINT
+"""
 
 
 @dataclass
