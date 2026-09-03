@@ -1,18 +1,3 @@
-"""Entry point for the ingestion stage.
-
-    python ingestion.py crawl                      every enabled site
-    python ingestion.py crawl brownsfashion kith   named sites only
-    python ingestion.py crawl kith --max-pages 2   short run, for a look at the data
-    python ingestion.py probe example.com          can this domain be scraped?
-    python ingestion.py sites                      what is configured
-    python ingestion.py collections kith           what a store publishes
-
-Each subcommand maps to one function below. argparse reads sys.argv and calls
-the matching function - nothing here shells out.
-
-`scripts/` is the library this drives; it holds no entry point of its own.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -23,6 +8,17 @@ from scripts import registry, store
 from scripts.fetch import ConfigError, FetchError, Fetcher
 from scripts.adapters.shopify import MAX_PAGE as PAGE_CEILING, PAGE_SIZE
 from scripts.probe import probe, suggest_yaml
+
+
+# What --help prints above the options.
+USAGE = """\
+python ingestion.py crawl                      every enabled site
+python ingestion.py crawl brownsfashion kith   named sites only
+python ingestion.py crawl kith --max-pages 2   short run, for a look at the data
+python ingestion.py probe example.com          can this domain be scraped?
+python ingestion.py sites                      what is configured
+python ingestion.py collections kith           what a store publishes
+"""
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -36,7 +32,7 @@ def _setup_logging(verbose: bool) -> None:
 # ── subcommand handlers ────────────────────────────────────────────────────────
 
 def run_crawl(args: argparse.Namespace) -> int:
-    """Scrape each requested site and write one JSON file per site."""
+    # Scrape each requested site and write one JSON file per site.
     sites = registry.load_sites(args.sites or None)
     if not sites:
         print("no sites matched; run `python ingestion.py sites` to see what is configured")
@@ -98,7 +94,7 @@ def run_crawl(args: argparse.Namespace) -> int:
 # ── probing ─────────────────────────────────────────────────────────────────
 
 def run_probe(args: argparse.Namespace) -> int:
-    """Classify domains and print a sites/*.yaml starting point for each."""
+    # Classify domains and print a sites/*.yaml starting point for each.
     fetcher = Fetcher()
     for domain in args.domains:
         result = probe(domain, fetcher)
@@ -118,11 +114,10 @@ def run_probe(args: argparse.Namespace) -> int:
 # ── listing what is configured ──────────────────────────────────────────────
 
 def list_collections(args: argparse.Namespace) -> int:
-    """Show what collections a store publishes, largest first.
-
-    Use it to decide `max_collections`, or to pick handles for an explicit
-    `collections:` list in the site's YAML.
-    """
+    # Show what collections a store publishes, largest first.
+    #
+    # Use it to decide `max_collections`, or to pick handles for an explicit
+    # `collections:` list in the site's YAML.
     from scripts.adapters.shopify import discover_collections
     for site in registry.load_sites(args.sites or None, include_disabled=True):
         found = discover_collections(Fetcher(rate_limit_rps=site.rate_limit_rps), site)
@@ -136,7 +131,7 @@ def list_collections(args: argparse.Namespace) -> int:
 
 
 def list_sites(args: argparse.Namespace) -> int:
-    """Print what is configured in sites/."""
+    # Print what is configured in sites/.
     sites = registry.load_sites(include_disabled=True)
     print(f"{len(sites)} site(s) in sites/\n")
     for site in sites:
@@ -154,7 +149,7 @@ def list_sites(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python ingestion.py",
-        description=__doc__,
+        description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("-v", "--verbose", action="store_true")

@@ -1,12 +1,3 @@
-"""Everything the crawler needs to look up before it starts.
-
-Two lookups, one place:
-  load_sites()   - the site configs in sites/*.yaml
-  get_adapter()  - the module that handles a site's `adapter:` key
-
-Adding a site is adding a YAML file, not writing a module.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -31,7 +22,7 @@ ADAPTERS: dict[str, ModuleType] = {
 
 
 def get_adapter(name: str) -> ModuleType:
-    """Return the adapter module for `name`, or raise listing the valid ones."""
+    # Return the adapter module for `name`, or raise listing the valid ones.
     try:
         return ADAPTERS[name]
     except KeyError:
@@ -42,11 +33,10 @@ def get_adapter(name: str) -> ModuleType:
 
 def load_sites(names: list[str] | None = None,
                *, include_disabled: bool = False) -> list[SiteConfig]:
-    """Read sites/*.yaml.
-
-    `names` filters to specific sites by file stem or `name` key. Disabled
-    sites are skipped unless asked for by name.
-    """
+    # Read sites/*.yaml.
+    #
+    # `names` filters to specific sites by file stem or `name` key. Disabled
+    # sites are skipped unless asked for by name.
     if not SITES_DIR.is_dir():
         raise FileNotFoundError(f"no sites directory at {SITES_DIR}")
 

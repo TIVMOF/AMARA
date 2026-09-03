@@ -1,19 +1,3 @@
-"""Where a crawl's output goes.
-
-One file per crawl:
-
-    data/raw/<site>/<timestamp>.json
-
-It holds every product body the store served, exactly as it served them, plus
-the page-by-page trace of what carried what. Nothing is filtered, selected,
-reshaped or cleaned - this layer's whole job is to preserve what arrived.
-
-Bodies are keyed by product id and stored once. Collections overlap by design,
-so writing each response whole meant storing the same product up to fourteen
-times: 1.7M bodies for 284K products. `responses` keeps the full trace as id
-lists, which is what the attribution is actually needed for. See issue #15.
-"""
-
 from __future__ import annotations
 
 import json
@@ -32,7 +16,7 @@ def _stamp(scraped_at: str) -> str:
 
 
 def build(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]:
-    """The file's contents: what was collected, and how the crawl went."""
+    # The file's contents: what was collected, and how the crawl went.
     pages = result.get("raw_pages", [])
     products = result.get("raw_products", {})
     return {
@@ -74,7 +58,7 @@ def build(site: SiteConfig, result: dict[str, Any]) -> dict[str, Any]:
 
 
 def write(site: SiteConfig, result: dict[str, Any]) -> Path:
-    """Write the crawl to disk and return the path."""
+    # Write the crawl to disk and return the path.
     path = RAW_DIR / site.name / f"{_stamp(result['scraped_at'])}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     # ensure_ascii=False keeps Alaïa, Chloé and Stüssy readable in the file.

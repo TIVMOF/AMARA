@@ -1,13 +1,3 @@
-"""HTTP layer. The only module that talks to the network.
-
-Adapters ask this for JSON and get JSON back. Rate limiting, retries and the
-User-Agent live here so no adapter has to think about them.
-
-Every tunable comes from .env (see .env.example) and there are no fallbacks in
-code - a missing key raises immediately rather than silently using a stale
-value that .env appears to control but does not.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -42,17 +32,19 @@ MAX_INTERVAL = 30.0         # seconds between requests, ceiling
 # ── errors ──────────────────────────────────────────────────────────────────
 
 class ConfigError(RuntimeError):
-    """A required setting is missing from the environment."""
+    # A required setting is missing from the environment.
+    pass
 
 
 class FetchError(RuntimeError):
-    """A URL could not be fetched, or did not return JSON."""
+    # A URL could not be fetched, or did not return JSON.
+    pass
 
 
 # ── configuration ───────────────────────────────────────────────────────────
 
 def env(name: str) -> str:
-    """Read a required AMARA_INGESTION_* setting."""
+    # Read a required AMARA_INGESTION_* setting.
     value = os.getenv(ENV_PREFIX + name)
     if value in (None, ""):
         raise ConfigError(
@@ -66,7 +58,7 @@ def env(name: str) -> str:
 # ── back-off ────────────────────────────────────────────────────────────────
 
 def _retry_after(response: requests.Response) -> float | None:
-    """Seconds to wait, if the server said. Handles both header forms."""
+    # Seconds to wait, if the server said. Handles both header forms.
     raw = response.headers.get("Retry-After")
     if not raw:
         return None
@@ -88,16 +80,15 @@ def _retry_after(response: requests.Response) -> float | None:
 # ── fetching ────────────────────────────────────────────────────────────────
 
 class Fetcher:
-    """A rate-limited JSON client. One instance per crawl.
-
-    `rate_limit_rps` is requests per second against a single host. Pass it
-    explicitly to honour a site's own rate_limit_rps; omit it to take the
-    default from .env.
-
-    The rate is a starting point, not a fixed setting. A 429 means the host has
-    told us it is wrong, so the interval widens for the rest of the crawl
-    rather than the request simply being retried at the speed that caused it.
-    """
+    # A rate-limited JSON client. One instance per crawl.
+    #
+    # `rate_limit_rps` is requests per second against a single host. Pass it
+    # explicitly to honour a site's own rate_limit_rps; omit it to take the
+    # default from .env.
+    #
+    # The rate is a starting point, not a fixed setting. A 429 means the host has
+    # told us it is wrong, so the interval widens for the rest of the crawl
+    # rather than the request simply being retried at the speed that caused it.
 
     def __init__(self, rate_limit_rps: float | None = None,
                  timeout: int | None = None, max_retries: int | None = None) -> None:
@@ -128,7 +119,7 @@ class Fetcher:
         self._last_request_at = time.monotonic()
 
     def _back_off(self, response: requests.Response) -> float:
-        """React to a 429: widen the interval for good, and wait as asked."""
+        # React to a 429: widen the interval for good, and wait as asked.
         self.throttled += 1
         previous = self.min_interval
         self.min_interval = min(self.min_interval * THROTTLE_BACKOFF or 1.0, MAX_INTERVAL)
@@ -141,11 +132,10 @@ class Fetcher:
         return min(wait, MAX_INTERVAL * 2)
 
     def get_json(self, url: str, *, allow_404: bool = False) -> Any | None:
-        """GET a URL and parse it as JSON.
-
-        Returns None on 404 when `allow_404` is set - used to probe endpoints
-        that may not exist on a given store. Raises FetchError otherwise.
-        """
+        # GET a URL and parse it as JSON.
+        #
+        # Returns None on 404 when `allow_404` is set - used to probe endpoints
+        # that may not exist on a given store. Raises FetchError otherwise.
         last_error = "unknown"
         attempt = 0
         throttle_attempts = 0

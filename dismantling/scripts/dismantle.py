@@ -1,13 +1,3 @@
-"""Taking raw crawls apart, one crawl and all of them.
-
-Driven by `../dismantling.py`, which is the stage's only entry point. Each
-crawl becomes three files under `data/staging/<site>/<timestamp>/`: see
-`raw.py` for why the raw shape needs changing at all, and `staging.py` for
-what the three files are.
-
-Nothing is cleaned or renamed here - that is `../../processing/`.
-"""
-
 from __future__ import annotations
 
 import json
@@ -17,7 +7,7 @@ from . import paths, raw, staging
 
 
 def dismantle(raw_path: Path, staging_root: Path) -> tuple[Path, int, int]:
-    """Take one raw crawl apart. Returns (directory, products, variants)."""
+    # Take one raw crawl apart. Returns (directory, products, variants).
     document = raw.load(raw_path)
     directory = staging.crawl_directory(
         staging_root, document["site"], document["scraped_at"]
@@ -32,7 +22,7 @@ def dismantle(raw_path: Path, staging_root: Path) -> tuple[Path, int, int]:
 
 
 def dismantle_all(raw_root: Path, staging_root: Path) -> int:
-    """Every raw crawl under `raw_root`. Returns how many failed."""
+    # Every raw crawl under `raw_root`. Returns how many failed.
     raw_files = sorted(raw_root.glob("*/*.json"))
     if not raw_files:
         print(f"No raw crawls found in {paths.relative(raw_root)}")

@@ -1,15 +1,3 @@
-"""Entry point for the dismantling stage.
-
-    python dismantling.py                     every crawl under ingestion/data/raw
-    python dismantling.py path/to/crawl.json  one crawl
-
-Each crawl becomes three files under `data/staging/<site>/<timestamp>/`. See
-`scripts/raw.py` for why the raw shape needs changing at all, and
-`scripts/staging.py` for what the three files are.
-
-Nothing is cleaned or renamed here - that is `../processing/`.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -18,10 +6,17 @@ from pathlib import Path
 from scripts import dismantle, paths
 
 
+# What --help prints above the options.
+USAGE = """\
+python dismantling.py                     every crawl under ingestion/data/raw
+python dismantling.py path/to/crawl.json  one crawl
+"""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python dismantling.py",
-        description=__doc__,
+        description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("input", type=Path, nargs="?",

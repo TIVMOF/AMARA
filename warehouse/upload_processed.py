@@ -1,13 +1,3 @@
-"""Uploads the processed parquets to a Snowflake stage.
-
-    python upload_processed.py                  every table
-    python upload_processed.py products brands  named tables only
-
-One stage prefix per table, so `@AMARA_STAGE/products/` holds exactly the part
-files of `processing/data/processed/products/`. COPY INTO reads a whole prefix,
-so the part count is Spark's business and nothing needs flattening first.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -15,8 +5,15 @@ import argparse
 from connection import PROCESSED_ROOT, STAGE, connect, datasets, put
 
 
+# What --help prints above the options.
+USAGE = """\
+python upload_processed.py                  every table
+python upload_processed.py products brands  named tables only
+"""
+
+
 def upload(only: list[str] | None = None) -> int:
-    """Upload every processed table, or just the named ones. Returns failures."""
+    # Upload every processed table, or just the named ones. Returns failures.
     wanted = set(only or [])
     found = [(name, files) for name, files in datasets(PROCESSED_ROOT, "part-*.parquet")
              if not wanted or name in wanted]
@@ -45,7 +42,7 @@ def upload(only: list[str] | None = None) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python upload_processed.py",
-        description=__doc__,
+        description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("tables", nargs="*",

@@ -1,13 +1,3 @@
-"""Reading a raw crawl and taking it apart.
-
-Ingestion writes one JSON object per crawl with product bodies keyed by
-product id, so a product carried by twelve collections is stored once. That
-shape is right for storage - 2.8 GB against 16 GB - and unreadable to Spark,
-which infers one column per key.
-
-Nothing here cleans or renames a value. This is a change of shape only.
-"""
-
 from __future__ import annotations
 
 import json
@@ -25,18 +15,17 @@ CRAWL_FIELDS = (
 
 
 def load(path: Path) -> dict[str, Any]:
-    """One raw crawl, as ingestion wrote it."""
+    # One raw crawl, as ingestion wrote it.
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def crawl_record(raw: dict[str, Any]) -> dict[str, Any]:
-    """The crawl's own metadata.
-
-    `vendors` arrives keyed by vendor name - the same map shape that makes the
-    product bodies unreadable - and two spellings differing only in case
-    collide outright under Spark's case-insensitive column names, which `032c`
-    and `032C` do. It becomes a list of records.
-    """
+    # The crawl's own metadata.
+    #
+    # `vendors` arrives keyed by vendor name - the same map shape that makes the
+    # product bodies unreadable - and two spellings differing only in case
+    # collide outright under Spark's case-insensitive column names, which `032c`
+    # and `032C` do. It becomes a list of records.
     record = {field: raw.get(field) for field in CRAWL_FIELDS}
     record["vendors"] = [
         {"vendor": vendor, "products": count}
@@ -46,12 +35,11 @@ def crawl_record(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def product_records(raw: dict[str, Any]) -> tuple[list[dict], list[dict]]:
-    """Split the product map into product rows and variant rows.
-
-    Every row carries `site` and `scraped_at` so the two can be joined back
-    together, and so a table built from several crawls knows which crawl each
-    row came from.
-    """
+    # Split the product map into product rows and variant rows.
+    #
+    # Every row carries `site` and `scraped_at` so the two can be joined back
+    # together, and so a table built from several crawls knows which crawl each
+    # row came from.
     site = raw["site"]
     scraped_at = raw["scraped_at"]
 

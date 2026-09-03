@@ -1,24 +1,16 @@
-"""Works out which adapter a domain needs, so sites/ can be written from evidence.
-
-Run this against any store before adding it. It answers two questions: is the
-platform's JSON open, and if so is this a multi-brand retailer worth crawling
-or a single-brand store whose `vendor` field is unreliable.
-"""
-
 from __future__ import annotations
 
 from .fetch import Fetcher, FetchError
 
 
 def probe(domain: str, fetcher: Fetcher | None = None) -> dict:
-    """Classify one domain.
-
-    Returns a dict with `adapter` set to the module that can handle it, or
-    None when nothing here can. `vendors` is the distinct vendor list from the
-    first page - the signal for whether the store is worth adding, since a
-    multi-brand retailer carries many allowlisted labels while a single-brand
-    store carries one.
-    """
+    # Classify one domain.
+    #
+    # Returns a dict with `adapter` set to the module that can handle it, or
+    # None when nothing here can. `vendors` is the distinct vendor list from the
+    # first page - the signal for whether the store is worth adding, since a
+    # multi-brand retailer carries many allowlisted labels while a single-brand
+    # store carries one.
     fetcher = fetcher or Fetcher()
     domain = domain.replace("https://", "").replace("http://", "").strip("/")
     last = ""
@@ -52,7 +44,7 @@ def probe(domain: str, fetcher: Fetcher | None = None) -> dict:
 
 
 def suggest_yaml(result: dict) -> str:
-    """Render a probe result as a sites/*.yaml starting point."""
+    # Render a probe result as a sites/*.yaml starting point.
     if not result.get("adapter"):
         return f"# {result['domain']}: {result.get('error')}"
 

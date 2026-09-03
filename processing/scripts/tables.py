@@ -1,13 +1,3 @@
-"""The tables this stage writes.
-
-Each function takes staged data plus the vocabularies and returns one clean
-table for `data/processed/`. Every column holds a natural value in upper case
-rather than a surrogate id - Snowflake loads these, assigns the keys, and
-builds the analytical star schema from them. Nothing here is a fact table:
-`variants` carries the measures at the grain the store published them, and
-what gets aggregated into a fact is a decision for the analytical layer.
-"""
-
 from __future__ import annotations
 
 from pyspark.sql import Column, DataFrame
@@ -62,11 +52,10 @@ MAX_PLAUSIBLE_DISCOUNT = 95
 # ── option helpers ─────────────────────────────────────────────────────────────
 
 def option_values(options: Column, names: tuple[str, ...]) -> Column:
-    """The values of the first option named one of `names`.
-
-    Shopify options are an array of {name, position, values} and the name is
-    the only reliable way in - which slot an option occupies varies by store.
-    """
+    # The values of the first option named one of `names`.
+    #
+    # Shopify options are an array of {name, position, values} and the name is
+    # the only reliable way in - which slot an option occupies varies by store.
     from pyspark.sql.functions import filter as array_filter, lower, trim
 
     matching = array_filter(options, lambda o: lower(trim(o["name"])).isin(list(names)))
@@ -74,11 +63,10 @@ def option_values(options: Column, names: tuple[str, ...]) -> Column:
 
 
 def option_position(options: Column, names: tuple[str, ...]) -> Column:
-    """The 1-based slot a named option occupies, for reading variant.optionN.
-
-    Cast to int because JSON inference makes it a bigint, which `element_at`
-    rejects as an index.
-    """
+    # The 1-based slot a named option occupies, for reading variant.optionN.
+    #
+    # Cast to int because JSON inference makes it a bigint, which `element_at`
+    # rejects as an index.
     from pyspark.sql.functions import filter as array_filter, lower, trim
 
     matching = array_filter(options, lambda o: lower(trim(o["name"])).isin(list(names)))
@@ -86,44 +74,41 @@ def option_position(options: Column, names: tuple[str, ...]) -> Column:
 
 
 def slot_value(slots: Column, position: Column) -> Column:
-    """A variant's option1/2/3 at a given slot, cleaned.
-
-    Null where the product declares no such option, which is most of what a
-    store sells that is not a garment.
-    """
+    # A variant's option1/2/3 at a given slot, cleaned.
+    #
+    # Null where the product declares no such option, which is most of what a
+    # store sells that is not a garment.
     return when(position.isNotNull(), name(try_element_at(slots, position)))
 
 
 def joined_values(options: Column, names: tuple[str, ...]) -> Column:
-    """A named option's values as one string, or null when it has none.
-
-    Colour and material are open vocabularies - 9,315 colours, and materials
-    that are fabric compositions like `74%WOOL,26%SILK` - so they are cleaned
-    and kept as written rather than mapped onto a reference list.
-    """
+    # A named option's values as one string, or null when it has none.
+    #
+    # Colour and material are open vocabularies - 9,315 colours, and materials
+    # that are fabric compositions like `74%WOOL,26%SILK` - so they are cleaned
+    # and kept as written rather than mapped onto a reference list.
     joined = concat_ws(" / ", array_transform(option_values(options, names), name))
     return when(joined == "", None).otherwise(joined)
 
 
 def crawl_date() -> Column:
-    """The date a staged row was observed, from its `scraped_at` timestamp."""
+    # The date a staged row was observed, from its `scraped_at` timestamp.
     return to_date(to_timestamp(col("scraped_at")))
 
 
 # ── tables ─────────────────────────────────────────────────────────────────────
 
 def crawls(staged_crawls: DataFrame, currencies: Reference) -> DataFrame:
-    """crawls - one row per crawl run: what was collected, and in what currency.
-
-    The provenance table. `products_received` against `products_stored` is what
-    deduplication removed, and `short_pages` against `pages` is how much of the
-    walk came back under-full - both are how you tell a retailer shrinking from
-    a crawl running short.
-
-    `name` is the crawl's brand override, set only for the 29 single-brand
-    sites. It is null for a multi-brand retailer, which has no one brand to
-    name.
-    """
+    # crawls - one row per crawl run: what was collected, and in what currency.
+    #
+    # The provenance table. `products_received` against `products_stored` is what
+    # deduplication removed, and `short_pages` against `pages` is how much of the
+    # walk came back under-full - both are how you tell a retailer shrinking from
+    # a crawl running short.
+    #
+    # `name` is the crawl's brand override, set only for the 29 single-brand
+    # sites. It is null for a multi-brand retailer, which has no one brand to
+    # name.
     return (
         staged_crawls
         .select(
@@ -143,7 +128,7 @@ def crawls(staged_crawls: DataFrame, currencies: Reference) -> DataFrame:
 
 
 def retailers(staged_crawls: DataFrame, countries: Reference) -> DataFrame:
-    """retailers - name, url, country."""
+    # retailers - name, url, country.
     return (
         staged_crawls
         .select(
@@ -156,7 +141,7 @@ def retailers(staged_crawls: DataFrame, countries: Reference) -> DataFrame:
 
 
 def dates(staged_crawls: DataFrame) -> DataFrame:
-    """dates - one row per date any crawl observed."""
+    # dates - one row per date any crawl observed.
     return (
         staged_crawls
         .select(crawl_date().alias("date"))
@@ -176,21 +161,20 @@ def dates(staged_crawls: DataFrame) -> DataFrame:
 
 def products(staged: DataFrame, brands: Reference, categories: Reference,
              genders: Reference) -> DataFrame:
-    """products - the catalogue: name, brand, category, gender, color, material.
-
-    One row per product per retailer, describing what the garment is. What it
-    cost and whether it was in stock belongs to `variants`, which is where a
-    date makes sense - so a product crawled twice is one row here, taken from
-    the most recent crawl.
-
-    Products whose vendor is not on the brand allowlist are dropped here, which
-    is what makes brands.yaml the allowlist as well as the classification.
-
-    Gender is stated three ways and often more than once: a `Gender` option, a
-    `Gender: Women` tag and a bare `mens` tag. All three are folded together,
-    and a product declaring more than one is Unisex rather than whichever came
-    first.
-    """
+    # products - the catalogue: name, brand, category, gender, color, material.
+    #
+    # One row per product per retailer, describing what the garment is. What it
+    # cost and whether it was in stock belongs to `variants`, which is where a
+    # date makes sense - so a product crawled twice is one row here, taken from
+    # the most recent crawl.
+    #
+    # Products whose vendor is not on the brand allowlist are dropped here, which
+    # is what makes brands.yaml the allowlist as well as the classification.
+    #
+    # Gender is stated three ways and often more than once: a `Gender` option, a
+    # `Gender: Women` tag and a bare `mens` tag. All three are folded together,
+    # and a product declaring more than one is Unisex rather than whichever came
+    # first.
     described = (
         staged
         .select(
@@ -223,25 +207,24 @@ def products(staged: DataFrame, brands: Reference, categories: Reference,
 def variants(staged_products: DataFrame, staged_variants: DataFrame,
              staged_crawls: DataFrame, catalogue: DataFrame,
              known_currencies: Reference) -> DataFrame:
-    """variants - one row per variant per crawl: size, colour, price, stock.
-
-    The variant is what a store actually sells and prices, so this is where the
-    measures live. A product averages 10.7 variants and they do not agree:
-    27.3% of products have some sizes in stock and others not, which is the
-    signal any size-level analysis in Snowflake needs.
-
-    Which of option1/2/3 holds the size differs per store, so the slot is read
-    from the product's own option list rather than assumed. Variants of a
-    product with no size option - fragrance, homeware - keep a null size rather
-    than being dropped; they still carry a price.
-
-    `original_price` is set only where a store is genuinely charging less than
-    its stated normal price. Shopify stores routinely set `compare_at_price`
-    equal to `price`, or to zero, when nothing is on sale.
-
-    `currency` sits beside `price` because a price without it is just a number:
-    the 50 retailers quote in USD, EUR, GBP and SEK.
-    """
+    # variants - one row per variant per crawl: size, colour, price, stock.
+    #
+    # The variant is what a store actually sells and prices, so this is where the
+    # measures live. A product averages 10.7 variants and they do not agree:
+    # 27.3% of products have some sizes in stock and others not, which is the
+    # signal any size-level analysis in Snowflake needs.
+    #
+    # Which of option1/2/3 holds the size differs per store, so the slot is read
+    # from the product's own option list rather than assumed. Variants of a
+    # product with no size option - fragrance, homeware - keep a null size rather
+    # than being dropped; they still carry a price.
+    #
+    # `original_price` is set only where a store is genuinely charging less than
+    # its stated normal price. Shopify stores routinely set `compare_at_price`
+    # equal to `price`, or to zero, when nothing is on sale.
+    #
+    # `currency` sits beside `price` because a price without it is just a number:
+    # the 50 retailers quote in USD, EUR, GBP and SEK.
     slots = staged_products.select(
         col("id").cast("string").alias("product"),
         name(col("site")).alias("retailer"),
@@ -303,11 +286,10 @@ def variants(staged_products: DataFrame, staged_variants: DataFrame,
 # ── what did not match ─────────────────────────────────────────────────────────
 
 def unmatched(staged: DataFrame, column: str, reference: Reference) -> DataFrame:
-    """Raw values a vocabulary did not recognise, most frequent first.
-
-    This report is how a reference file grows - anything here that should be
-    reported on is a missing entry or a missing alias.
-    """
+    # Raw values a vocabulary did not recognise, most frequent first.
+    #
+    # This report is how a reference file grows - anything here that should be
+    # reported on is a missing entry or a missing alias.
     from pyspark.sql.functions import count
 
     return (

@@ -1,19 +1,3 @@
-"""Adapter for stores running Shopify.
-
-Used ONLY by sites whose YAML says `adapter: shopify`. Every Shopify store
-exposes the same two endpoints with the same payload shape, which is why one
-module serves all of them - kith, brownsfashion, antonioli and the rest differ
-only in the config file, never in the code:
-
-    /products.json?limit=250&page=N               whole catalogue
-    /collections/<handle>/products.json?limit=250 one collection
-    /meta.json                                    shop currency + country
-
-Nothing here interprets a product. The adapter's job is to reach every page a
-store will serve and hand back the bodies exactly as they arrived; deciding
-what a field means belongs to whatever reads the file later.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -62,11 +46,10 @@ PAGE_BUDGET = 4000
 # ── crawl ──────────────────────────────────────────────────────────────────────
 
 def _shop_meta(fetcher: Fetcher, site: SiteConfig) -> tuple[str | None, str | None]:
-    """Currency and country for the store, from /meta.json.
-
-    products.json does not carry a currency anywhere, so without this every
-    price would be a bare number of unknown denomination.
-    """
+    # Currency and country for the store, from /meta.json.
+    #
+    # products.json does not carry a currency anywhere, so without this every
+    # price would be a bare number of unknown denomination.
     if site.currency and site.country:
         return site.currency, site.country
     try:
@@ -79,12 +62,11 @@ def _shop_meta(fetcher: Fetcher, site: SiteConfig) -> tuple[str | None, str | No
 
 
 def discover_collections(fetcher: Fetcher, site: SiteConfig) -> list[dict]:
-    """Every collection the store publishes, largest first.
-
-    `products_count` is a hint, not a contract - Browns claims 3,679 for
-    womens-new-season and serves 3,661 - so it is used only for ordering and
-    reporting, never as a page budget.
-    """
+    # Every collection the store publishes, largest first.
+    #
+    # `products_count` is a hint, not a contract - Browns claims 3,679 for
+    # womens-new-season and serves 3,661 - so it is used only for ordering and
+    # reporting, never as a page budget.
     base = site.base_url.rstrip("/")
     found: list[dict] = []
     page = 1
@@ -103,13 +85,12 @@ def discover_collections(fetcher: Fetcher, site: SiteConfig) -> list[dict]:
 
 
 def _initial_targets(site: SiteConfig) -> tuple[list[tuple[str, str]], int]:
-    """What to crawl before the store has told us anything.
-
-    Always the unfiltered listing, plus any collections named outright in the
-    site config - a hand-picked list is a deliberate instruction, not a guess.
-    Discovered collections are NOT included: whether this store needs them at
-    all is decided from what the unfiltered listing does. See issue #16.
-    """
+    # What to crawl before the store has told us anything.
+    #
+    # Always the unfiltered listing, plus any collections named outright in the
+    # site config - a hand-picked list is a deliberate instruction, not a guess.
+    # Discovered collections are NOT included: whether this store needs them at
+    # all is decided from what the unfiltered listing does. See issue #16.
     base = site.base_url.rstrip("/")
     targets = [(UNFILTERED_LABEL, f"{base}/products.json")]
     targets += [(h, f"{base}/collections/{h}/products.json") for h in site.collections]
@@ -117,22 +98,21 @@ def _initial_targets(site: SiteConfig) -> tuple[list[tuple[str, str]], int]:
 
 
 def _shard_targets(fetcher: Fetcher, site: SiteConfig) -> tuple[list[tuple[str, str]], int]:
-    """Collections to shard by, once the unfiltered listing has proved it needs them.
-
-    An unfiltered /products.json cannot reach past MAX_PAGE * PAGE_SIZE
-    products. Collection-scoped endpoints each get their own page budget, which
-    is the only way past that ceiling - see issue #5.
-
-    Collections are additional shards, never a replacement. The unfiltered
-    listing is crawled first and kept: it is the only target guaranteed to
-    reach a product that belongs to no collection, or to one outside the
-    largest max_collections. bdgastore lost 874 products to the earlier
-    either/or - see issue #12. Dedupe by product id makes the union a superset
-    by construction.
-
-    Returns (targets, guaranteed): the first `guaranteed` are crawled outright,
-    the rest are the long tail entered only if something truncates - issue #14.
-    """
+    # Collections to shard by, once the unfiltered listing has proved it needs them.
+    #
+    # An unfiltered /products.json cannot reach past MAX_PAGE * PAGE_SIZE
+    # products. Collection-scoped endpoints each get their own page budget, which
+    # is the only way past that ceiling - see issue #5.
+    #
+    # Collections are additional shards, never a replacement. The unfiltered
+    # listing is crawled first and kept: it is the only target guaranteed to
+    # reach a product that belongs to no collection, or to one outside the
+    # largest max_collections. bdgastore lost 874 products to the earlier
+    # either/or - see issue #12. Dedupe by product id makes the union a superset
+    # by construction.
+    #
+    # Returns (targets, guaranteed): the first `guaranteed` are crawled outright,
+    # the rest are the long tail entered only if something truncates - issue #14.
     base = site.base_url.rstrip("/")
     discovered = discover_collections(fetcher, site)
     handles = [c["handle"] for c in discovered[:DEEP_MAX_COLLECTIONS]]
@@ -147,18 +127,17 @@ def _shard_targets(fetcher: Fetcher, site: SiteConfig) -> tuple[list[tuple[str, 
 
 def _fetch_page(fetcher: Fetcher, url: str, page: int,
                 *, key: str = "products") -> tuple[list[dict], bool]:
-    """Fetch one listing page, re-requesting it while it comes back short.
-
-    A short page is NOT proof that a catalogue has ended. These stores
-    soft-throttle by serving fewer items rather than returning 429, and because
-    paging is offset-based, silently accepting a short page also drops the
-    items it should have carried.
-
-    Returns (items, was_short). Items are the raw objects exactly as the store
-    sent them. `was_short` means every attempt came back under PAGE_SIZE with at
-    least one item - the page is probably incomplete and is recorded as such,
-    rather than being taken as the end of the store.
-    """
+    # Fetch one listing page, re-requesting it while it comes back short.
+    #
+    # A short page is NOT proof that a catalogue has ended. These stores
+    # soft-throttle by serving fewer items rather than returning 429, and because
+    # paging is offset-based, silently accepting a short page also drops the
+    # items it should have carried.
+    #
+    # Returns (items, was_short). Items are the raw objects exactly as the store
+    # sent them. `was_short` means every attempt came back under PAGE_SIZE with at
+    # least one item - the page is probably incomplete and is recorded as such,
+    # rather than being taken as the end of the store.
     best: list[dict] = []
 
     for attempt in range(1, PAGE_ATTEMPTS + 1):
@@ -176,12 +155,11 @@ def _fetch_page(fetcher: Fetcher, url: str, page: int,
 
 
 def crawl(site: SiteConfig, *, max_pages: int | None = None) -> dict:
-    """Page through a Shopify store and return everything it served.
-
-    No product is dropped and no field is interpreted. Vendors are tallied on
-    the way past, which is how you see what a store actually sells without
-    opening the file.
-    """
+    # Page through a Shopify store and return everything it served.
+    #
+    # No product is dropped and no field is interpreted. Vendors are tallied on
+    # the way past, which is how you see what a store actually sells without
+    # opening the file.
     fetcher = Fetcher(rate_limit_rps=site.rate_limit_rps)
     scraped_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     currency, country = _shop_meta(fetcher, site)

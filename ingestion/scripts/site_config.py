@@ -1,5 +1,3 @@
-"""Validated view of one file in sites/."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -8,7 +6,7 @@ from typing import Any
 
 @dataclass
 class SiteConfig:
-    """One file in sites/. `adapter` picks which module in adapters/ handles it."""
+    # One file in sites/. `adapter` picks which module in adapters/ handles it.
 
     name: str
     adapter: str

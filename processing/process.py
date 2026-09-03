@@ -1,31 +1,3 @@
-"""Entry point for the processing stage: a Spark application.
-
-    spark-submit process.py              every staged crawl
-    spark-submit process.py --dry-run    build and report, write nothing
-
-Run it through spark-submit so the master, memory and packages come from the
-submit command rather than being frozen into this file.
-
-`scripts/` is the library this drives; it holds no entry point of its own. On
-a cluster it has to travel with the job:
-
-    spark-submit --py-files scripts.zip process.py
-
-Two kinds of output land in `data/processed/`.
-
-Reference parquets - brands, segments, tiers, categories, genders, countries,
-currencies - are the controlled vocabularies in `reference/*.yaml`. Each run
-appends whatever the YAML has gained, so editing a YAML is how a vocabulary
-changes.
-
-Data tables - crawls, retailers, dates, products, variants - are the crawl
-itself, made clean. This stage stops at clean: it builds no facts and no
-dimensions. Every column holds a natural value in upper case rather than a
-surrogate id, so Snowflake loads these into a staging schema, assigns the
-keys, and derives the analytical star schema of
-`img/amara-analystical-data-diagram.png` from there.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -35,6 +7,13 @@ from pyspark.sql import DataFrame, SparkSession
 from scripts import paths, reference, staging, tables
 
 
+# What --help prints above the options.
+USAGE = """\
+spark-submit process.py              every staged crawl
+spark-submit process.py --dry-run    build and report, write nothing
+"""
+
+
 # How many unrecognised values to name per column before summarising the rest.
 REPORT_LIMIT = 8
 
@@ -42,21 +21,20 @@ REPORT_LIMIT = 8
 # ── the run ─────────────────────────────────────────────────────────────────
 
 def build_session() -> SparkSession:
-    """The session, configured by whoever submitted the job.
-
-    Deliberately sets no master. A builder option overrides what spark-submit
-    was told, so a hardcoded `.master("local[*]")` turns every cluster
-    submission into one local JVM without saying so. Left alone, `--master`
-    wins, and a bare `python process.py` still falls back to local[*] because
-    that is already PySpark's own default.
-    """
+    # The session, configured by whoever submitted the job.
+    #
+    # Deliberately sets no master. A builder option overrides what spark-submit
+    # was told, so a hardcoded `.master("local[*]")` turns every cluster
+    # submission into one local JVM without saying so. Left alone, `--master`
+    # wins, and a bare `python process.py` still falls back to local[*] because
+    # that is already PySpark's own default.
     spark = SparkSession.builder.appName("AMARA").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
     return spark
 
 
 def sync_reference(spark: SparkSession) -> dict[str, reference.Reference]:
-    """Bring every reference parquet in step with its YAML."""
+    # Bring every reference parquet in step with its YAML.
     print("Reference data")
     loaded = {}
     for vocabulary in reference.load_all():
@@ -71,7 +49,7 @@ def sync_reference(spark: SparkSession) -> dict[str, reference.Reference]:
 
 def report_unmatched(staged: DataFrame, column: str,
                      vocabulary: reference.Reference) -> None:
-    """Name the values a vocabulary missed, so the YAML can grow."""
+    # Name the values a vocabulary missed, so the YAML can grow.
     rows = tables.unmatched(staged, column, vocabulary).limit(REPORT_LIMIT + 1).collect()
     if not rows:
         return
@@ -129,7 +107,7 @@ def run(spark: SparkSession, *, dry_run: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="spark-submit process.py",
-        description=__doc__,
+        description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--dry-run", action="store_true",
