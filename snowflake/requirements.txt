@@ -1,0 +1,3 @@
+# Uploading the parquets and driving Snowflake. Nothing here reads a product.
+snowflake-connector-python>=3.12.0   # PUT into a stage; see upload_processed.py
+python-dotenv>=1.0.0                 # AMARA_SNOWFLAKE_* from .env

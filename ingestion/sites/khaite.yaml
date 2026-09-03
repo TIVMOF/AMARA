@@ -1,5 +1,5 @@
 # Khaite
-# Discovered by: python -m scripts probe khaite.com
+# Discovered by: python ingestion.py probe khaite.com
 name: khaite
 adapter: shopify
 base_url: https://www.khaite.com

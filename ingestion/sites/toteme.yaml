@@ -1,5 +1,5 @@
 # Toteme; vendor reads 'Toteme - INT'
-# Discovered by: python -m scripts probe toteme-studio.com
+# Discovered by: python ingestion.py probe toteme-studio.com
 name: toteme
 adapter: shopify
 base_url: https://www.toteme-studio.com

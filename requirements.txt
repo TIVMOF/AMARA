@@ -1,0 +1,13 @@
+# Everything, for the single .venv at the repo root.
+#
+#     python3 -m venv .venv
+#     .venv/bin/pip install -r requirements.txt
+#
+# Each stage keeps its own requirements.txt as the record of what that stage
+# alone needs. This file only gathers them, so there is one command to set up
+# a working tree and no list to keep in sync by hand.
+
+-r ingestion/requirements.txt
+-r dismantling/requirements.txt
+-r processing/requirements.txt
+-r snowflake/requirements.txt

@@ -1,5 +1,5 @@
 # Scotch & Soda; vendor field holds licensees
-# Discovered by: python -m scripts probe scotch-soda.com
+# Discovered by: python ingestion.py probe scotch-soda.com
 name: scotchsoda
 adapter: shopify
 base_url: https://www.scotch-soda.com

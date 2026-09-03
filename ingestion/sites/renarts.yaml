@@ -1,5 +1,5 @@
 # sneakers + streetwear
-# Discovered by: python -m scripts probe renarts.com
+# Discovered by: python ingestion.py probe renarts.com
 name: renarts
 adapter: shopify
 base_url: https://www.renarts.com
@@ -9,7 +9,7 @@ country: "US"
 
 # Empty = whole catalogue. Add Shopify collection handles to narrow the crawl,
 # e.g. [clothing, shoes, bags, accessories] - check /collections.json for names.
-# `python -m scripts collections renarts` lists these, largest first.
+# `python ingestion.py collections renarts` lists these, largest first.
 collections: []
 
 # Permission only; renarts will not use it. Its unfiltered /products.json

@@ -1,5 +1,5 @@
 # streetwear, Italy
-# Discovered by: python -m scripts probe slamjam.com
+# Discovered by: python ingestion.py probe slamjam.com
 name: slamjam
 adapter: shopify
 base_url: https://www.slamjam.com

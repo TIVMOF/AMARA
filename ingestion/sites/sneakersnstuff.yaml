@@ -1,5 +1,5 @@
 # sneakers, Stockholm
-# Discovered by: python -m scripts probe sneakersnstuff.com
+# Discovered by: python ingestion.py probe sneakersnstuff.com
 name: sneakersnstuff
 adapter: shopify
 base_url: https://www.sneakersnstuff.com

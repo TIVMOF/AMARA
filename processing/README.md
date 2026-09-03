@@ -4,13 +4,24 @@ Turns the staged crawls in `../dismantling/data/staging/` into clean parquet
 tables under `data/processed/`, ready to load into Snowflake.
 
 ```bash
-.venv/bin/pip install -r requirements.txt
-JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python -m scripts.process
-JAVA_HOME=$(/usr/libexec/java_home -v 21) .venv/bin/python -m scripts.process --dry-run
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+spark-submit process.py
+spark-submit process.py --dry-run
 ```
 
 Spark needs a JVM; 21 is what Spark 4 wants. `--dry-run` builds and reports
 every table but writes no data tables.
+
+`spark-submit` comes from the pip-installed pyspark in the repo-root `.venv`,
+and finds Spark by asking the `python` on PATH where pyspark lives — so the
+virtualenv has to be activated, or Spark reports `Could not find valid
+SPARK_HOME`.
+
+`process.py` sets no master, so `--master` is yours to pass:
+
+```bash
+spark-submit --master "local[4]" --driver-memory 8g process.py
+```
 
 ## Where this stage stops
 
@@ -157,7 +168,7 @@ colourway the product lists, on `variants` the one that variant is.
 ## Layout
 
 ```
-scripts/process.py     the CLI, and the run end to end
+process.py             the entry point, and the run end to end
 scripts/reference.py   YAML vocabularies, and keeping their parquets in step
 scripts/staging.py     reading what dismantling wrote
 scripts/tables.py      the tables this stage writes

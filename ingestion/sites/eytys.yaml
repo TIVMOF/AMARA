@@ -1,5 +1,5 @@
 # Eytys
-# Discovered by: python -m scripts probe eytys.com
+# Discovered by: python ingestion.py probe eytys.com
 name: eytys
 adapter: shopify
 base_url: https://www.eytys.com

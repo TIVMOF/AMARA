@@ -1,5 +1,5 @@
 # Jack Wolfskin
-# Discovered by: python -m scripts probe jack-wolfskin.com
+# Discovered by: python ingestion.py probe jack-wolfskin.com
 name: jackwolfskin
 adapter: shopify
 base_url: https://www.jack-wolfskin.com

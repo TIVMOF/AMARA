@@ -1,5 +1,5 @@
 # Nanushka
-# Discovered by: python -m scripts probe nanushka.com
+# Discovered by: python ingestion.py probe nanushka.com
 name: nanushka
 adapter: shopify
 base_url: https://www.nanushka.com

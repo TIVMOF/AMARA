@@ -1,5 +1,5 @@
 # sneakers + streetwear, New Jersey
-# Discovered by: python -m scripts probe packershoes.com
+# Discovered by: python ingestion.py probe packershoes.com
 name: packershoes
 adapter: shopify
 base_url: https://www.packershoes.com

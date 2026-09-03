@@ -1,18 +1,15 @@
-"""Takes raw crawls apart into files Spark can read.
+"""Taking raw crawls apart, one crawl and all of them.
 
-    python -m scripts.dismantle                    every crawl under data/raw
-    python -m scripts.dismantle path/to/crawl.json one crawl
-
-Each crawl becomes three files under `data/staging/<site>/<timestamp>/`. See
+Driven by `../dismantling.py`, which is the stage's only entry point. Each
+crawl becomes three files under `data/staging/<site>/<timestamp>/`: see
 `raw.py` for why the raw shape needs changing at all, and `staging.py` for
 what the three files are.
 
-Nothing is cleaned or renamed here - that is `../processing/`.
+Nothing is cleaned or renamed here - that is `../../processing/`.
 """
 
 from __future__ import annotations
 
-import argparse
 import json
 from pathlib import Path
 
@@ -58,28 +55,3 @@ def dismantle_all(raw_root: Path, staging_root: Path) -> int:
 
     print(f"\nDismantled {len(raw_files) - failures}/{len(raw_files)}")
     return failures
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("input", type=Path, nargs="?",
-                        help="a single raw crawl; default is every crawl under --raw")
-    parser.add_argument("--raw", type=Path, default=paths.RAW_ROOT,
-                        help="directory holding the raw crawls")
-    parser.add_argument("--staging", type=Path, default=paths.STAGING_ROOT,
-                        help="directory to write the staged files into")
-    args = parser.parse_args()
-
-    if not args.input:
-        raise SystemExit(1 if dismantle_all(args.raw, args.staging) else 0)
-
-    if not args.input.is_file():
-        raise SystemExit(f"no such raw crawl: {args.input}")
-
-    directory, products, variants = dismantle(args.input, args.staging)
-    print(f"{products:,} products and {variants:,} variants "
-          f"-> {paths.relative(directory)}")
-
-
-if __name__ == "__main__":
-    main()

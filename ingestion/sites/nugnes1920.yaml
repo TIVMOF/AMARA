@@ -1,5 +1,5 @@
 # luxury multi-brand, Trani
-# Discovered by: python -m scripts probe nugnes1920.com
+# Discovered by: python ingestion.py probe nugnes1920.com
 name: nugnes1920
 adapter: shopify
 base_url: https://www.nugnes1920.com

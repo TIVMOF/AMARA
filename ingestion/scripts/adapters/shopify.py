@@ -17,7 +17,6 @@ what a field means belongs to whatever reads the file later.
 from __future__ import annotations
 
 import logging
-import re
 from datetime import datetime, timezone
 
 from ..fetch import Fetcher, FetchError
@@ -339,9 +338,21 @@ def crawl(site: SiteConfig, *, max_pages: int | None = None) -> dict:
                 log.info("  [%s] unfiltered listing stopped on %s at %d products - "
                          "sharding by collection to reach the rest",
                          site.name, stopped, len(seen_ids))
-                shards, allowed = _shard_targets(fetcher, site)
-                targets += shards
-                guaranteed += allowed
+                try:
+                    shards, allowed = _shard_targets(fetcher, site)
+                except FetchError as exc:
+                    # collections.json failing is not worth the products already
+                    # in hand. Recorded and reported like any other listing
+                    # error - see issue #2 - rather than raised, which would
+                    # discard the whole crawl at run_crawl.
+                    log.warning("  [%s] collection discovery failed (%s); keeping "
+                                "the %d products already collected",
+                                site.name, exc, len(seen_ids))
+                    errors.append({"listing": "*collections*", "page": 0,
+                                   "error": str(exc)})
+                else:
+                    targets += shards
+                    guaranteed += allowed
             elif stopped == "empty_page":
                 log.info("  [%s] unfiltered listing ended on its own at %d products; "
                          "no sharding needed", site.name, len(seen_ids))

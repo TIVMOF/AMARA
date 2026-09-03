@@ -3,11 +3,12 @@
 Takes raw crawls apart into files Spark can read.
 
 ```bash
-python3 -m scripts.dismantle                     # every crawl under ingestion/data/raw
-python3 -m scripts.dismantle path/to/crawl.json  # one crawl
+python dismantling.py                     # every crawl under ingestion/data/raw
+python dismantling.py path/to/crawl.json  # one crawl
 ```
 
-No dependencies beyond the standard library.
+No dependencies beyond the standard library, so this is the one stage that
+runs on a bare `python3` with no virtualenv.
 
 ## Why this stage exists
 
@@ -48,7 +49,8 @@ of `{vendor, products}` records.
 ## Layout
 
 ```
-scripts/dismantle.py   the CLI, and one crawl end to end
+dismantling.py         the entry point
+scripts/dismantle.py   one crawl end to end, and all of them
 scripts/raw.py         reading a raw crawl and splitting it up
 scripts/staging.py     writing the three files
 scripts/paths.py       where things live

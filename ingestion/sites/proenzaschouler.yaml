@@ -1,5 +1,5 @@
 # Proenza Schouler
-# Discovered by: python -m scripts probe proenzaschouler.com
+# Discovered by: python ingestion.py probe proenzaschouler.com
 name: proenzaschouler
 adapter: shopify
 base_url: https://www.proenzaschouler.com

@@ -1,5 +1,5 @@
 # luxury multi-brand, Italy
-# Discovered by: python -m scripts probe suitnegozi.com
+# Discovered by: python ingestion.py probe suitnegozi.com
 name: suitnegozi
 adapter: shopify
 base_url: https://www.suitnegozi.com

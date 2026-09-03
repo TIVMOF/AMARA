@@ -1,5 +1,5 @@
 # The Row
-# Discovered by: python -m scripts probe therow.com
+# Discovered by: python ingestion.py probe therow.com
 name: therow
 adapter: shopify
 base_url: https://www.therow.com

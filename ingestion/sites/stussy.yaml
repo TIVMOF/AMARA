@@ -1,5 +1,5 @@
 # Stüssy
-# Discovered by: python -m scripts probe stussy.com
+# Discovered by: python ingestion.py probe stussy.com
 name: stussy
 adapter: shopify
 base_url: https://www.stussy.com

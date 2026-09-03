@@ -1,5 +1,5 @@
 # Social Status, sneakers, Pittsburgh
-# Discovered by: python -m scripts probe socialstatuspgh.com
+# Discovered by: python ingestion.py probe socialstatuspgh.com
 name: socialstatus
 adapter: shopify
 base_url: https://www.socialstatuspgh.com

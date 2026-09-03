@@ -1,5 +1,5 @@
 # Bodega, streetwear, Boston
-# Discovered by: python -m scripts probe bdgastore.com
+# Discovered by: python ingestion.py probe bdgastore.com
 name: bdgastore
 adapter: shopify
 base_url: https://www.bdgastore.com
