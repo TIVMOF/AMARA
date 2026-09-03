@@ -7,6 +7,9 @@ tables under `data/processed/`, ready to load into Snowflake.
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 spark-submit process.py
 spark-submit process.py --dry-run
+
+python validate_processing.py            # is the output sound?
+python validate_processing.py --strict   # warnings fail too
 ```
 
 Spark needs a JVM; 21 is what Spark 4 wants. `--dry-run` builds and reports
@@ -169,6 +172,7 @@ colourway the product lists, on `variants` the one that variant is.
 
 ```
 process.py             the entry point, and the run end to end
+validate_processing.py checking what it wrote
 scripts/reference.py   YAML vocabularies, and keeping their parquets in step
 scripts/staging.py     reading what dismantling wrote
 scripts/tables.py      the tables this stage writes

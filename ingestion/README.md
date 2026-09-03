@@ -33,7 +33,24 @@ python ingestion.py crawl kith --max-pages 2    # short run, to eyeball
 python ingestion.py probe example.com           # can this site be scraped?
 python ingestion.py sites                       # what is configured
 python ingestion.py collections kith            # what a store publishes
+
+python validate_ingestion.py                    # is what was collected sound?
+python validate_ingestion.py kith --strict      # one retailer, warnings fail too
 ```
+
+`validate_ingestion.py` is a separate command, run after a crawl. It recomputes
+every counter a crawl file claims - `products_stored` against the bodies,
+`products_received` against the page trace, the vendor tally against the
+vendors - and checks the page-by-page trace against the bodies in both
+directions. An id on a page with no body is a lost product; a body no page
+claims is a product with no provenance.
+
+Errors mean the file is not trustworthy and exit 1. Warnings mean the *crawl*
+was thin and exit 0 unless `--strict`: a listing cut off at Shopify's ceiling,
+a failed request, throttling, or pages coming back under-full. That last one
+is the useful one. A listing ends on one partial page, so one short page per
+listing means nothing - tedbaker answers all 23 of its pages with 7 to 164
+items against 250 and still reports `complete`.
 
 ## How it fits together
 

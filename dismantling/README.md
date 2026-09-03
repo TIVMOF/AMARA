@@ -5,6 +5,9 @@ Takes raw crawls apart into files Spark can read.
 ```bash
 python dismantling.py                     # every crawl under ingestion/data/raw
 python dismantling.py path/to/crawl.json  # one crawl
+
+python3 validate_dismantling.py           # is the staged output sound?
+python3 validate_dismantling.py kith      # one site
 ```
 
 No dependencies beyond the standard library, so this is the one stage that
@@ -49,12 +52,26 @@ of `{vendor, products}` records.
 ## Layout
 
 ```
-dismantling.py         the entry point
-scripts/dismantle.py   one crawl end to end, and all of them
-scripts/raw.py         reading a raw crawl and splitting it up
-scripts/staging.py     writing the three files
-scripts/paths.py       where things live
+dismantling.py            the entry point
+validate_dismantling.py   checking what it wrote
+scripts/dismantle.py      one crawl end to end, and all of them
+scripts/raw.py            reading a raw crawl and splitting it up
+scripts/staging.py        writing the three files
+scripts/paths.py          where things live
 ```
+
+## Validating
+
+`validate_dismantling.py` checks that the shape change lost nothing: the line
+count against `crawl.json`, that no product kept its `variants` key, that every
+variant names a product that exists, and that every row's `site` and
+`scraped_at` match the directory it sits in — that is what lets rows from
+several crawls be joined back together.
+
+It also reports what the stores themselves do that anything downstream has to
+cope with. framestore lists the same garment under two product ids sharing one
+variant id, so 6,832 variant ids are reused; keying on the variant alone loses
+a row, which is why `processing` keys on `(variant, product, retailer, date)`.
 
 50 crawls, 2.8 GB of raw in and 2.0 GB of staging out, in a few minutes. One
 malformed crawl is reported and skipped rather than stopping the other 49.

@@ -19,6 +19,19 @@ source .venv/bin/activate
 (cd warehouse   && python upload_processed.py)  # processed -> a Snowflake stage
 ```
 
+Each of the first three stages has a validator, run after it as its own
+command:
+
+```bash
+(cd ingestion   && python validate_ingestion.py)
+(cd dismantling && python3 validate_dismantling.py)
+(cd processing  && python validate_processing.py)
+```
+
+They exit 1 on an error — output that is internally inconsistent and should not
+be built on — and 0 on a warning, which is data that is thin rather than wrong.
+`--strict` makes warnings fail too.
+
 | stage | takes | produces | why it is separate |
 |---|---|---|---|
 | `ingestion/` | 50 storefronts | one JSON per crawl | **collection only** — nothing is filtered, mapped, cleaned or interpreted. Deduplication is the sole exception. |

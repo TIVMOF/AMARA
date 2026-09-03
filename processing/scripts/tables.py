@@ -279,7 +279,11 @@ def variants(staged_products: DataFrame, staged_variants: DataFrame,
             ).alias("discount"),
             "available",
         )
-        .dropDuplicates(["variant", "retailer", "date"])
+        # Keyed on the product too: a variant id is unique within a product,
+        # not within a store. framestore lists the same garment under two
+        # product ids sharing one variant id, and keying on the variant alone
+        # silently dropped one of the two rows.
+        .dropDuplicates(["variant", "product", "retailer", "date"])
     )
 
 
