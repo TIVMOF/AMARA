@@ -1,5 +1,5 @@
 # sneakers + streetwear, NYC
-# Discovered by: python -m scripts probe extrabutterny.com
+# Discovered by: python ingestion.py probe extrabutterny.com
 name: extrabutterny
 adapter: shopify
 base_url: https://www.extrabutterny.com

@@ -1,5 +1,5 @@
 # Skims; vendor field holds fabric names
-# Discovered by: python -m scripts probe skims.com
+# Discovered by: python ingestion.py probe skims.com
 name: skims
 adapter: shopify
 base_url: https://www.skims.com

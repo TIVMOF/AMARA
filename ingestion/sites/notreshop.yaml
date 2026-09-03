@@ -1,5 +1,5 @@
 # Notre, streetwear, Chicago
-# Discovered by: python -m scripts probe notre-shop.com
+# Discovered by: python ingestion.py probe notre-shop.com
 name: notreshop
 adapter: shopify
 base_url: https://www.notre-shop.com

@@ -1,5 +1,5 @@
 # A.P.C. US store
-# Discovered by: python -m scripts probe usonline.apc.fr
+# Discovered by: python ingestion.py probe usonline.apc.fr
 name: apc
 adapter: shopify
 base_url: https://usonline.apc.fr

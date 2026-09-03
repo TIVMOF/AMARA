@@ -1,5 +1,5 @@
 # Champion
-# Discovered by: python -m scripts probe champion.com
+# Discovered by: python ingestion.py probe champion.com
 name: champion
 adapter: shopify
 base_url: https://www.champion.com

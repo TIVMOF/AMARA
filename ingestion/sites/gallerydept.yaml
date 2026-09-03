@@ -1,5 +1,5 @@
 # Gallery Dept.
-# Discovered by: python -m scripts probe gallerydept.com
+# Discovered by: python ingestion.py probe gallerydept.com
 name: gallerydept
 adapter: shopify
 base_url: https://www.gallerydept.com

@@ -1,5 +1,5 @@
 # Union LA, streetwear
-# Discovered by: python -m scripts probe unionlosangeles.com
+# Discovered by: python ingestion.py probe unionlosangeles.com
 name: unionlosangeles
 adapter: shopify
 base_url: https://www.unionlosangeles.com

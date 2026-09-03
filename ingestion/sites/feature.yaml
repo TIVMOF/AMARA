@@ -1,5 +1,5 @@
 # streetwear + sneakers, Las Vegas
-# Discovered by: python -m scripts probe feature.com
+# Discovered by: python ingestion.py probe feature.com
 name: feature
 adapter: shopify
 base_url: https://www.feature.com

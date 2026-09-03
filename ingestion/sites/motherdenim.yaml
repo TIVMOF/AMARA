@@ -1,5 +1,5 @@
 # Mother; store also stocks other labels
-# Discovered by: python -m scripts probe motherdenim.com
+# Discovered by: python ingestion.py probe motherdenim.com
 name: motherdenim
 adapter: shopify
 base_url: https://www.motherdenim.com

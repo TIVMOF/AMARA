@@ -1,5 +1,5 @@
 # Amiri
-# Discovered by: python -m scripts probe amiri.com
+# Discovered by: python ingestion.py probe amiri.com
 name: amiri
 adapter: shopify
 base_url: https://www.amiri.com

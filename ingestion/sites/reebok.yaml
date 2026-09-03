@@ -1,5 +1,5 @@
 # Reebok
-# Discovered by: python -m scripts probe reebok.com
+# Discovered by: python ingestion.py probe reebok.com
 name: reebok
 adapter: shopify
 base_url: https://www.reebok.com

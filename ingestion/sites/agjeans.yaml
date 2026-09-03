@@ -1,5 +1,5 @@
 # AG Jeans
-# Discovered by: python -m scripts probe agjeans.com
+# Discovered by: python ingestion.py probe agjeans.com
 name: agjeans
 adapter: shopify
 base_url: https://www.agjeans.com

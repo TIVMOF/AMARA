@@ -1,5 +1,5 @@
 # streetwear, Cleveland
-# Discovered by: python -m scripts probe xhibition.co
+# Discovered by: python ingestion.py probe xhibition.co
 name: xhibition
 adapter: shopify
 base_url: https://www.xhibition.co

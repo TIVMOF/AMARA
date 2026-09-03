@@ -1,5 +1,5 @@
 # Kith own label plus Nike/Jordan/ASICS
-# Discovered by: python -m scripts probe kith.com
+# Discovered by: python ingestion.py probe kith.com
 name: kith
 adapter: shopify
 base_url: https://kith.com

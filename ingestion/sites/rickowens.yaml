@@ -1,5 +1,5 @@
 # Rick Owens
-# Discovered by: python -m scripts probe rickowens.eu
+# Discovered by: python ingestion.py probe rickowens.eu
 name: rickowens
 adapter: shopify
 base_url: https://www.rickowens.eu

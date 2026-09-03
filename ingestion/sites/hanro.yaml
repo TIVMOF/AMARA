@@ -1,5 +1,5 @@
 # Hanro; vendor field truncated to 'HA'
-# Discovered by: python -m scripts probe hanro.com
+# Discovered by: python ingestion.py probe hanro.com
 name: hanro
 adapter: shopify
 base_url: https://www.hanro.com
