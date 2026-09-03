@@ -21,6 +21,7 @@ def probe(domain: str, fetcher: Fetcher | None = None) -> dict:
     """
     fetcher = fetcher or Fetcher()
     domain = domain.replace("https://", "").replace("http://", "").strip("/")
+    last = ""
 
     for base in (f"https://www.{domain}", f"https://{domain}"):
         try:
@@ -28,8 +29,8 @@ def probe(domain: str, fetcher: Fetcher | None = None) -> dict:
         except FetchError as exc:
             last = str(exc)
             continue
-        last = ""
         if not isinstance(payload, dict) or "products" not in payload:
+            last = f"{base}/products.json did not return a product list"
             continue
 
         products = payload["products"]

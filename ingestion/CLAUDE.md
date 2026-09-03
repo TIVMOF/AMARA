@@ -17,12 +17,12 @@ see **The output file** below.
 ## Commands
 
 ```bash
-.venv/bin/python -m scripts crawl                    # every enabled site (~2h, 50 sites)
-.venv/bin/python -m scripts crawl kith brownsfashion # named sites
-.venv/bin/python -m scripts crawl kith --max-pages 2 # short run, to eyeball output
-.venv/bin/python -m scripts probe someretailer.com   # is the JSON open? prints a sites/*.yaml
-.venv/bin/python -m scripts sites                    # what is configured
-.venv/bin/python -m scripts collections kith         # what a store publishes, largest first
+python ingestion.py crawl                    # every enabled site (~2h, 50 sites)
+python ingestion.py crawl kith brownsfashion # named sites
+python ingestion.py crawl kith --max-pages 2 # short run, to eyeball output
+python ingestion.py probe someretailer.com   # is the JSON open? prints a sites/*.yaml
+python ingestion.py sites                    # what is configured
+python ingestion.py collections kith         # what a store publishes, largest first
 ```
 
 **There is no test suite** — no pytest, no test files, no CI. Changes are

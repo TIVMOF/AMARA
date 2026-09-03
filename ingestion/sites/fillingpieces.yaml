@@ -1,5 +1,5 @@
 # Filling Pieces; vendor field holds price tiers
-# Discovered by: python -m scripts probe fillingpieces.com
+# Discovered by: python ingestion.py probe fillingpieces.com
 name: fillingpieces
 adapter: shopify
 base_url: https://www.fillingpieces.com

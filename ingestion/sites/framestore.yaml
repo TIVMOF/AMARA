@@ -1,5 +1,5 @@
 # Frame
-# Discovered by: python -m scripts probe frame-store.com
+# Discovered by: python ingestion.py probe frame-store.com
 name: framestore
 adapter: shopify
 base_url: https://www.frame-store.com

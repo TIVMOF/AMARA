@@ -1,5 +1,5 @@
 # Isabel Marant (incl. Etoile line)
-# Discovered by: python -m scripts probe isabelmarant.com
+# Discovered by: python ingestion.py probe isabelmarant.com
 name: isabelmarant
 adapter: shopify
 base_url: https://www.isabelmarant.com

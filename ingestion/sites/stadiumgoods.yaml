@@ -1,5 +1,5 @@
 # sneakers + luxury resale, NYC
-# Discovered by: python -m scripts probe stadiumgoods.com
+# Discovered by: python ingestion.py probe stadiumgoods.com
 name: stadiumgoods
 adapter: shopify
 base_url: https://www.stadiumgoods.com

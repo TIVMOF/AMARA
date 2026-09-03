@@ -1,5 +1,5 @@
 # Ted Baker; vendor field holds licensees
-# Discovered by: python -m scripts probe tedbaker.com
+# Discovered by: python ingestion.py probe tedbaker.com
 name: tedbaker
 adapter: shopify
 base_url: https://www.tedbaker.com

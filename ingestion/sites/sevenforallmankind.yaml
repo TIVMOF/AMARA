@@ -1,5 +1,5 @@
 # 7 For All Mankind
-# Discovered by: python -m scripts probe 7forallmankind.com
+# Discovered by: python ingestion.py probe 7forallmankind.com
 name: sevenforallmankind
 adapter: shopify
 base_url: https://www.7forallmankind.com

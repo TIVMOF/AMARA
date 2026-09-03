@@ -4,4 +4,4 @@
 # argparse. It is deliberately the one stage you can run anywhere without a
 # virtualenv:
 #
-#     python3 -m scripts.dismantle
+#     python dismantling.py

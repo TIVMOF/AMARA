@@ -1,5 +1,5 @@
 # Cult Gaia
-# Discovered by: python -m scripts probe cultgaia.com
+# Discovered by: python ingestion.py probe cultgaia.com
 name: cultgaia
 adapter: shopify
 base_url: https://www.cultgaia.com

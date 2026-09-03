@@ -1,5 +1,5 @@
 # AMI Paris
-# Discovered by: python -m scripts probe amiparis.com
+# Discovered by: python ingestion.py probe amiparis.com
 name: amiparis
 adapter: shopify
 base_url: https://www.amiparis.com

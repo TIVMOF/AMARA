@@ -18,11 +18,10 @@ on the product and the variant.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 import yaml
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 
 from . import paths
 from .clean import fold

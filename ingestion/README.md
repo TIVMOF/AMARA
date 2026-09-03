@@ -14,21 +14,25 @@ product record shape, the dimensional model — lives in `../processing/`.
 
 ## Setup
 
+The virtualenv is the one at the repo root, shared by every stage:
+
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cp .env.example .env
+cd .. && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cd ingestion && cp .env.example .env
 ```
+
+`requirements.txt` here records what this stage alone needs; the root file
+gathers them all.
 
 ## Usage
 
 ```bash
-.venv/bin/python -m scripts crawl                       # every enabled site
-.venv/bin/python -m scripts crawl brownsfashion kith    # named sites
-.venv/bin/python -m scripts crawl kith --max-pages 2    # short run, to eyeball
-.venv/bin/python -m scripts probe example.com           # can this site be scraped?
-.venv/bin/python -m scripts sites                       # what is configured
-.venv/bin/python -m scripts collections kith            # what a store publishes
+python ingestion.py crawl                       # every enabled site
+python ingestion.py crawl brownsfashion kith    # named sites
+python ingestion.py crawl kith --max-pages 2    # short run, to eyeball
+python ingestion.py probe example.com           # can this site be scraped?
+python ingestion.py sites                       # what is configured
+python ingestion.py collections kith            # what a store publishes
 ```
 
 ## How it fits together
@@ -160,7 +164,7 @@ stadiumgoods   tail contributions [1196, 73, 0, 858, 367, ...]   stopped at 65
 Four of the five had nothing past collection 40. stadiumgoods had 1,196 and 858
 and 927 sitting at ranks 41, 44 and 59, and a fixed cap would have lost them.
 
-`python -m scripts collections <site>` lists what a store publishes, largest
+`python ingestion.py collections <site>` lists what a store publishes, largest
 first. Browns has 2,700 non-empty collections; they overlap heavily, so the
 largest few dozen cover the catalogue for a fraction of the ~3,500 requests
 crawling all of them would cost.
@@ -168,7 +172,7 @@ crawling all of them would cost.
 ## Adding a site
 
 ```bash
-.venv/bin/python -m scripts probe someretailer.com
+python ingestion.py probe someretailer.com
 ```
 
 It reports whether the JSON is open, whether the store is multi-brand or

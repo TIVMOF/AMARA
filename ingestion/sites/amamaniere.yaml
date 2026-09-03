@@ -1,5 +1,5 @@
 # A Ma Maniére, elevated streetwear, Atlanta
-# Discovered by: python -m scripts probe amamaniere.com
+# Discovered by: python ingestion.py probe amamaniere.com
 name: amamaniere
 adapter: shopify
 base_url: https://www.amamaniere.com

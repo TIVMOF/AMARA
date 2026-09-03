@@ -1,5 +1,5 @@
 # Citizens of Humanity
-# Discovered by: python -m scripts probe citizensofhumanity.com
+# Discovered by: python ingestion.py probe citizensofhumanity.com
 name: citizensofhumanity
 adapter: shopify
 base_url: https://www.citizensofhumanity.com

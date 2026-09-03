@@ -1,5 +1,5 @@
 # Dries Van Noten; vendor field holds seasons
-# Discovered by: python -m scripts probe driesvannoten.com
+# Discovered by: python ingestion.py probe driesvannoten.com
 name: driesvannoten
 adapter: shopify
 base_url: https://www.driesvannoten.com

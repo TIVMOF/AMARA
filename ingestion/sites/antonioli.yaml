@@ -1,5 +1,5 @@
 # luxury multi-brand, Milan
-# Discovered by: python -m scripts probe antonioli.eu
+# Discovered by: python ingestion.py probe antonioli.eu
 name: antonioli
 adapter: shopify
 base_url: https://www.antonioli.eu

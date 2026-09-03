@@ -1,5 +1,5 @@
 # Concepts, streetwear + sneakers, Boston
-# Discovered by: python -m scripts probe cncpts.com
+# Discovered by: python ingestion.py probe cncpts.com
 name: cncpts
 adapter: shopify
 base_url: https://www.cncpts.com

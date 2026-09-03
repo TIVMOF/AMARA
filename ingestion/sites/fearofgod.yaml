@@ -1,5 +1,5 @@
 # Fear of God incl. ESSENTIALS line
-# Discovered by: python -m scripts probe fearofgod.com
+# Discovered by: python ingestion.py probe fearofgod.com
 name: fearofgod
 adapter: shopify
 base_url: https://www.fearofgod.com
