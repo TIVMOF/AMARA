@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import argparse
 
-from warehouse import RAW_ROOT, STAGE, connect, datasets, put
+from connection import RAW_ROOT, STAGE, connect, datasets, put
 
 
 def upload(only: list[str] | None = None) -> int:

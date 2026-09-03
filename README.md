@@ -16,7 +16,7 @@ source .venv/bin/activate
 (cd ingestion   && python ingestion.py crawl)   # retailers -> ingestion/data/raw/
 (cd dismantling && python dismantling.py)       # raw       -> dismantling/data/staging/
 (cd processing  && spark-submit process.py)     # staging   -> processing/data/processed/
-(cd snowflake   && python upload_processed.py)  # processed -> a Snowflake stage
+(cd warehouse   && python upload_processed.py)  # processed -> a Snowflake stage
 ```
 
 | stage | takes | produces | why it is separate |
@@ -24,7 +24,7 @@ source .venv/bin/activate
 | `ingestion/` | 50 storefronts | one JSON per crawl | **collection only** — nothing is filtered, mapped, cleaned or interpreted. Deduplication is the sole exception. |
 | `dismantling/` | those JSON files | three files per crawl | a change of *shape* only, so Spark can read what ingestion wrote. |
 | `processing/` | the staged files | 12 parquet tables | the only stage that changes a value. Cleaning, folding, the brand allowlist. |
-| `snowflake/` | the parquets | rows in a warehouse | upload and load. The star schema is built here, not upstream. |
+| `warehouse/` | the parquets | rows in Snowflake | upload and load. The star schema is built here, not upstream. |
 
 The boundary that matters is the first one: **ingestion stores what a store
 sent, processing decides what it means.** A rule about brands or categories
@@ -56,7 +56,7 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 ingestion/     ingestion.py    + scripts/, sites/*.yaml   one YAML per retailer
 dismantling/   dismantling.py  + scripts/
 processing/    process.py      + scripts/, reference/*.yaml   the vocabularies
-snowflake/     upload_*.py     + warehouse.py
+warehouse/     upload_*.py     + connection.py
 img/           the analytical model this all feeds
 ```
 

@@ -10,4 +10,4 @@
 -r ingestion/requirements.txt
 -r dismantling/requirements.txt
 -r processing/requirements.txt
--r snowflake/requirements.txt
+-r warehouse/requirements.txt
