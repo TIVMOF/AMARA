@@ -195,12 +195,9 @@ def products(staged: DataFrame, brands: Reference, categories: Reference,
         .where(col("brand").isNotNull())
     )
 
-    newest = Window.partitionBy("product", "retailer").orderBy(col("date").desc_nulls_last())
     return (
         described
-        .withColumn("_rank", row_number().over(newest))
-        .where(col("_rank") == 1)
-        .drop("_rank", "date")
+        .dropDuplicates(["product", "retailer", "date"])
     )
 
 
