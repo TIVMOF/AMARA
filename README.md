@@ -8,66 +8,99 @@ build a star schema from.
 
 ## The pipeline
 
-Four stages, each a directory with one entry point, run in order:
-
-```bash
-source .venv/bin/activate
-
-(cd ingestion   && python ingestion.py crawl)   # retailers -> ingestion/data/raw/
-(cd dismantling && python dismantling.py)       # raw       -> dismantling/data/staging/
-(cd processing  && spark-submit process.py)     # staging   -> processing/data/processed/
-(cd warehouse   && python upload_processed.py)  # processed -> a Snowflake stage
-```
+Four components, named for what making a garment takes. AMARA **gathers** the
+materials, **shears** the fabric, **stitches** the clothes and **hangs** them.
 
 | stage | takes | produces | why it is separate |
 |---|---|---|---|
-| `ingestion/` | 50 storefronts | one JSON per crawl | **collection only** — nothing is filtered, mapped, cleaned or interpreted. Deduplication is the sole exception. |
-| `dismantling/` | those JSON files | three files per crawl | a change of *shape* only, so Spark can read what ingestion wrote. |
-| `processing/` | the staged files | 12 parquet tables | the only stage that changes a value. Cleaning, folding, the brand allowlist. |
-| `warehouse/` | the parquets | rows in Snowflake | upload and load. The star schema is built here, not upstream. |
+| `gather/` | 50 storefronts | one JSON per retailer | **collection only** — nothing is filtered, mapped, cleaned or interpreted. Deduplication is the sole exception. |
+| `shear/` | those JSON files | three files per retailer | a change of *shape* only, so Spark can read what gather wrote. |
+| `stitch/` | the sheared files | 12 parquet tables | the only stage that changes a value. Cleaning, folding, the brand allowlist. |
+| `hang/` | the parquets | rows in Snowflake | upload and load. The star schema is built here, not upstream. |
 
-The boundary that matters is the first one: **ingestion stores what a store
-sent, processing decides what it means.** A rule about brands or categories
-belongs in `processing/reference/*.yaml`, never in a crawler.
+The boundary that matters is the first one: **gather stores what a store sent,
+stitch decides what it means.** A rule about brands or categories belongs in
+`stitch/reference/*.yaml`, never in a crawler.
+
+## One run is one crawl on one date
+
+The whole pipeline handles **a single crawl, stamped once**. `gather.py` takes
+one timestamp at the start and gives it to every retailer, so a run lasting
+eighteen hours — which a full crawl does — cannot straddle midnight and split
+itself across two dates.
+
+That matters downstream: `products` and `variants` are cumulative in Snowflake,
+and a row is told apart from the same product in an earlier crawl **by date
+alone**. Two dates inside one run would make one product look like two.
+
+So `cleanup.py` runs at the end of every pass, and the next crawl starts from
+an empty `data/`. `validate_gather.py` fails if it finds more than one crawl.
+
+```bash
+(cd gather && python gather.py crawl        && python validate_gather.py)
+(cd shear  && python3 shear.py              && python3 validate_shear.py)
+(cd stitch && spark-submit stitch.py        && python validate_stitch.py)
+(cd hang   && python upload_raw.py)         # raw       -> the RAW stage
+(cd hang   && python upload_processed.py)   # parquets  -> the PROCESSED stage
+(cd hang   && python load_processed.py)     # that stage -> Snowflake tables
+(cd hang   && python cleanup.py)            # drop the local data, once it is up
+```
+
+A validator exits 1 on an error — output that is internally inconsistent and
+should not be built on — and 0 on a warning, which is data that is thin rather
+than wrong.
+
+**`cleanup.py` is the last step for a reason.** It deletes every `data/`
+directory, so Snowflake becomes the only copy. Run it once the uploads have
+actually succeeded; nothing brings the data back but another crawl.
 
 ## Setup
 
-One virtualenv at the root, shared by every stage:
+Every component is self-contained: its own `requirements.txt`, and its own
+`.env` where it needs one.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cp ingestion/.env.example ingestion/.env    # crawler settings
-cp .env.example .env                        # Snowflake credentials
+.venv/bin/pip install -r gather/requirements.txt \
+                     -r shear/requirements.txt \
+                     -r stitch/requirements.txt \
+                     -r hang/requirements.txt
+
+cp gather/.env.example gather/.env    # crawler settings
+cp hang/.env.example   hang/.env      # Snowflake credentials
 ```
 
-Each stage keeps its own `requirements.txt` recording what that stage alone
-needs; the root file just gathers them.
-
-Processing additionally needs a JVM — Spark 4 wants Java 17 or 21:
+`shear/` is stdlib-only and runs on a bare `python3`. `stitch/` needs a JVM,
+and `spark-submit` finds Spark through the `python` on PATH:
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export PATH="$PWD/.venv/bin:$PATH"
 ```
 
 ## Layout
 
 ```
-ingestion/     ingestion.py    + scripts/, sites/*.yaml   one YAML per retailer
-dismantling/   dismantling.py  + scripts/
-processing/    process.py      + scripts/, reference/*.yaml   the vocabularies
-warehouse/     upload_*.py     + connection.py
-img/           the analytical model this all feeds
+gather/   gather.py   validate_gather.py   scripts/  sites/*.yaml
+shear/    shear.py    validate_shear.py    scripts/
+stitch/   stitch.py   validate_stitch.py   scripts/  reference/*.yaml
+hang/     upload_raw.py  upload_processed.py  load_processed.py  cleanup.py
+img/      the analytical model this all feeds
 ```
 
-Every stage writes into its own `data/`, which is gitignored. Each `scripts/`
-is a library with no entry point of its own — there is exactly one way to run
-a stage.
+Each `scripts/` is a library with no entry point of its own — there is exactly
+one way to run a stage. Every stage writes into its own gitignored `data/`:
+
+```
+gather/data/agjeans-20260916T122802Z.json   one flat file per retailer
+shear/data/agjeans/20260916T122802Z/        three files, so a folder each
+stitch/data/products/                       one folder per parquet table
+```
 
 ## The model
 
-`img/amara-analystical-data-diagram.png` is the target. Processing stops short
+`img/amara-analystical-data-diagram.png` is the target. `stitch/` stops short
 of it deliberately: it emits `products`, `variants`, `crawls`, `retailers`,
 `dates` and the reference vocabularies, all holding natural values in upper
 case rather than surrogate ids. Snowflake assigns the keys and builds the
-dimensions and facts. See `processing/README.md` for the table shapes.
+dimensions and facts. See `stitch/README.md` for the table shapes.
