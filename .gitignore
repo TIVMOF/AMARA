@@ -1,10 +1,10 @@
-ingestion/data/
-dismantling/data/
-processing/data/
+gather/data/
+shear/data/
+stitch/data/
 
-# secrets / local config
+# secrets / local config. A bare `.env` matches at any depth, so each
+# component's own file is covered.
 .env
-ingestion/.env
 
 # python
 __pycache__/
