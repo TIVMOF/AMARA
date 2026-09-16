@@ -39,6 +39,22 @@ DEEP_MAX_COLLECTIONS = 400
 TAIL_PATIENCE = 5
 TAIL_MIN_NEW = 25
 
+# The same reasoning, a page at a time. Stores publish collections that overlap
+# almost entirely - brownsfashion carries both `woman` and `women` - and the
+# second is walked to the 100-page ceiling while adding nothing, because a
+# collection is only judged barren once it has been walked in full. Three
+# consecutive pages of 250 already-collected products is the store saying this
+# collection is covered; against a host that has throttled us to one request
+# every 30s those pages cost ~45 minutes and return nothing. The unfiltered
+# listing is exempt - it enumerates the catalogue rather than re-cutting it, so
+# it is always walked to its own end.
+SHARD_DEAD_PAGES = 3
+
+# A listing that stopped for one of these finished on its own terms: it ran out
+# of products, or it stopped paying for the requests. Neither is a truncation,
+# so neither makes a crawl incomplete - see `complete` below.
+SELF_ENDED = ("empty_page", "exhausted")
+
 # Hard stop on a single site, so a store with 3,000 collections cannot run
 # unbounded. Only ever reached by a store that is already truncating.
 PAGE_BUDGET = 4000
@@ -215,6 +231,7 @@ def crawl(site: SiteConfig, *, scraped_at: str, max_pages: int | None = None) ->
 
         page = 1
         known = len(seen_ids)
+        dead_pages = 0
         short_pages: list[int] = []
         stopped = "empty_page"
 
@@ -261,6 +278,7 @@ def crawl(site: SiteConfig, *, scraped_at: str, max_pages: int | None = None) ->
                             site.name, label, page, len(batch), PAGE_SIZE, PAGE_ATTEMPTS)
 
             seen_raw += len(batch)
+            before = len(seen_ids)
             page_ids: list[str] = []
             for raw in batch:
                 product_id = str(raw.get("id"))
@@ -286,6 +304,14 @@ def crawl(site: SiteConfig, *, scraped_at: str, max_pages: int | None = None) ->
             log.info("  [%s/%s] page %d: %d products, %d collected so far",
                      site.name, label, page, len(batch), len(seen_ids))
             page += 1
+
+            dead_pages = 0 if len(seen_ids) > before else dead_pages + 1
+            if label != UNFILTERED_LABEL and dead_pages >= SHARD_DEAD_PAGES:
+                log.info("  [%s/%s] %d consecutive pages added nothing new - "
+                         "already covered by a collection crawled earlier",
+                         site.name, label, dead_pages)
+                stopped = "exhausted"
+                break
 
         new = len(seen_ids) - known
         if index >= guaranteed + skipped:
@@ -345,12 +371,12 @@ def crawl(site: SiteConfig, *, scraped_at: str, max_pages: int | None = None) ->
         "collections_crawled": sum(1 for l in listings if l["label"] != UNFILTERED_LABEL),
         "pages_fetched": sum(l["pages_fetched"] for l in listings),
         "short_pages": sum(len(l["short_pages"]) for l in listings),
-        # Complete is about termination only: every listing ran out of products
-        # on its own rather than being cut off. Short pages are reported
-        # separately - they are a caveat on density, not proof of truncation,
-        # and folding them in here would mark almost every crawl incomplete and
-        # make the flag worthless.
-        "complete": all(l["stopped_reason"] == "empty_page" for l in listings),
+        # Complete is about termination only: every listing ended on its own
+        # terms rather than being cut off. Short pages are reported separately -
+        # they are a caveat on density, not proof of truncation, and folding
+        # them in here would mark almost every crawl incomplete and make the
+        # flag worthless.
+        "complete": all(l["stopped_reason"] in SELF_ENDED for l in listings),
         "errors": errors,
         # Whether the host pushed back, and what the rate ended up at. A crawl
         # that was slowed is still trustworthy; one that was slowed a lot is a

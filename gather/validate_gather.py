@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Iterator, NamedTuple
 
 from scripts import registry
-from scripts.adapters.shopify import PAGE_SIZE, UNFILTERED_LABEL
+from scripts.adapters.shopify import PAGE_SIZE, SELF_ENDED, UNFILTERED_LABEL
 
 USAGE = ("python validate_gather.py              every retailer file in data/\n"
          "python validate_gather.py kith agjeans   named retailers only")
@@ -72,7 +72,7 @@ def check_self(at: str, path: Path, data: dict) -> Iterator[Finding]:
     if dict(tally) != (data.get("vendors") or {}):
         yield Finding(ERROR, at, "vendors tally does not match the bodies")
 
-    ended = all(l.get("stopped_reason") == "empty_page" for l in listings)
+    ended = all(l.get("stopped_reason") in SELF_ENDED for l in listings)
     if data.get("complete") is not ended:
         yield Finding(ERROR, at, f"complete is {data.get('complete')} but "
                                  f"{'every' if ended else 'not every'} listing ended "
@@ -95,7 +95,7 @@ def check_quality(at: str, data: dict) -> Iterator[Finding]:
 
     if not data.get("products"):
         yield Finding(WARN, at, "no products at all")
-    if cut := [l for l in listings if l.get("stopped_reason") != "empty_page"]:
+    if cut := [l for l in listings if l.get("stopped_reason") not in SELF_ENDED]:
         why = Counter(l.get("stopped_reason") for l in cut)
         yield Finding(WARN, at, f"{len(cut)}/{len(listings)} listing(s) cut off "
                                 f"({', '.join(f'{n} on {r}' for r, n in why.items())})")
