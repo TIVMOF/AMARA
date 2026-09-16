@@ -1,5 +1,5 @@
 # luxury multi-brand, London
-# Discovered by: python ingestion.py probe brownsfashion.com
+# Discovered by: python gather.py probe brownsfashion.com
 name: brownsfashion
 adapter: shopify
 base_url: https://www.brownsfashion.com
@@ -8,7 +8,7 @@ currency: "GBP"
 country: "GB"
 
 # Empty = whole catalogue. Add Shopify collection handles to narrow the crawl -
-# `python ingestion.py collections brownsfashion` lists them, largest first.
+# `python gather.py collections brownsfashion` lists them, largest first.
 collections: []
 
 # This catalogue is larger than the 25,000 an unfiltered /products.json can
@@ -21,6 +21,13 @@ max_collections: 40
 
 # Stop after N pages per collection. null = until the store runs out.
 max_pages: null
+
+# Measured, not guessed. At the default 1/s this store serves 37 requests and
+# then refuses everything for about seven minutes - long enough that the crawler
+# burned six 60s waits per collection and abandoned them one after another. At
+# 0.5/s it served 120 consecutive requests without a single 429. The ceiling is
+# a sustained rate, so crawling slower here finishes sooner.
+rate_limit_rps: 0.5
 
 enabled: true
 notes: "multi-brand retailer"
