@@ -7,7 +7,7 @@ from . import paths
 from .connection import connect, env
 
 
-DEFAULT_PROCESSED_ROOT = paths.PROCESSED_ROOT
+DEFAULT_PROCESSED_ROOT = paths.OUTPUT_ROOT
 
 
 def datasets(root: Path) -> list[tuple[str, list[Path]]]:
@@ -63,8 +63,8 @@ def upload(processed_root: Path) -> None:
                     )
 
                     for row in cursor.fetchall():
-                        name, _, status, *_ = row
-                        print(f"    {name} -> {status}")
+                        name, _, _, size, *_, status, _ = row
+                        print(f"    {name} -> {status} ({size:,} bytes)")
 
     finally:
         connection.close()

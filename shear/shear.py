@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from scripts import paths, split, validate
+from scripts import cleanup, paths, split, validate
 
 
 # What --help prints above the options.
@@ -12,6 +12,7 @@ USAGE = """\
 python shear.py                     the current crawl under gather/data
 python shear.py path/to/crawl.json  one retailer's file
 python shear.py validate            is the sheared output sound?
+python shear.py cleanup             empty data/, once it is stitched
 """
 
 
@@ -20,9 +21,10 @@ def main(argv: list[str] | None = None) -> int:
     # line intact, so it keeps its own arguments rather than having them
     # re-declared here and kept in step by hand.
     argv = sys.argv[1:] if argv is None else argv
-    if argv and argv[0] == "validate":
-        validate.main(argv[1:])
-        return 0
+    for name, command in (("validate", validate.main), ("cleanup", cleanup.main)):
+        if argv and argv[0] == name:
+            command(argv[1:])
+            return 0
 
     parser = argparse.ArgumentParser(
         prog="python shear.py",

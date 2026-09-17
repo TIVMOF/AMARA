@@ -5,7 +5,8 @@ import logging
 import sys
 from datetime import datetime, timezone
 
-from scripts import registry, store, validate
+from scripts import (cleanup, registry, store, upload_raw, validate,
+                     validate_upload)
 from scripts.fetch import ConfigError, FetchError, Fetcher
 from scripts.adapters.shopify import MAX_PAGE as PAGE_CEILING, PAGE_SIZE
 from scripts.probe import probe, suggest_yaml
@@ -20,6 +21,9 @@ python gather.py probe example.com          can this domain be scraped?
 python gather.py sites                      what is configured
 python gather.py collections kith           what a store publishes
 python gather.py validate                   is the crawl output sound?
+python gather.py upload                     the crawl JSON -> the RAW stage
+python gather.py validate-upload            is every crawl file in the stage?
+python gather.py cleanup                    empty data/, once it is uploaded
 """
 
 
@@ -141,6 +145,12 @@ def list_collections(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_upload(args: argparse.Namespace) -> int:
+    """PUT every crawl file into Snowflake's RAW stage."""
+    upload_raw.upload()
+    return 0
+
+
 def list_sites(args: argparse.Namespace) -> int:
     """Print what is configured in sites/."""
     sites = registry.load_sites(include_disabled=True)
@@ -162,9 +172,12 @@ def main(argv: list[str] | None = None) -> int:
     # line intact, so it keeps its own arguments rather than having them
     # re-declared here and kept in step by hand.
     argv = sys.argv[1:] if argv is None else argv
-    if argv and argv[0] == "validate":
-        validate.main(argv[1:])
-        return 0
+    for name, command in (("validate", validate.main),
+                          ("validate-upload", validate_upload.main),
+                          ("cleanup", cleanup.main)):
+        if argv and argv[0] == name:
+            command(argv[1:])
+            return 0
 
     parser = argparse.ArgumentParser(
         prog="python gather.py",
@@ -184,6 +197,8 @@ def main(argv: list[str] | None = None) -> int:
     probe_cmd.set_defaults(handler=run_probe)
 
     sub.add_parser("sites", help="list configured sites").set_defaults(handler=list_sites)
+
+    sub.add_parser("upload", help="crawl JSON -> Snowflake's RAW stage").set_defaults(handler=run_upload)
 
     cols = sub.add_parser("collections", help="show a store's collections, largest first")
     cols.add_argument("sites", nargs="*", help="site names; default is all")

@@ -36,6 +36,9 @@ python gather.py collections kith            # what a store publishes
 
 python gather.py validate                    # is what was collected sound?
 python gather.py validate kith               # one retailer
+python gather.py upload                      # the crawl JSON -> the RAW stage
+python gather.py validate-upload             # is every file in the stage?
+python gather.py cleanup                     # empty data/, once it is uploaded
 ```
 
 `gather.py validate` is a separate command, run after a crawl. It recomputes

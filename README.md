@@ -33,19 +33,23 @@ That matters downstream: `products` and `variants` are cumulative in Snowflake,
 and a row is told apart from the same product in an earlier crawl **by date
 alone**. Two dates inside one run would make one product look like two.
 
-So `hang.py cleanup` runs at the end of every pass, and the next crawl starts
-from an empty `data/`. `gather.py validate` fails if it finds more than one
+So each stage empties its own `data/` at the end of a pass, and the next crawl
+starts from an empty one. `gather.py validate` fails if it finds more than one
 crawl.
 
 ```bash
-(cd gather && python gather.py crawl        && python gather.py validate)
-(cd shear  && python3 shear.py              && python3 shear.py validate)
-(cd stitch && spark-submit stitch.py        && spark-submit stitch.py validate)
-(cd hang   && python hang.py upload-raw       && python hang.py validate-raw)
-(cd hang   && python hang.py upload-processed && python hang.py validate-processed)
+(cd gather && python gather.py crawl  && python gather.py validate)
+(cd gather && python gather.py upload && python gather.py validate-upload)
+(cd shear  && python3 shear.py        && python3 shear.py validate)
+(cd stitch && spark-submit stitch.py  && spark-submit stitch.py validate)
+(cd stitch && spark-submit stitch.py upload && spark-submit stitch.py validate-upload)
 (cd hang   && python hang.py load-processed)
-(cd hang   && python hang.py load-analytical  && python hang.py validate-loaded)
-(cd hang   && python hang.py cleanup)       # drop the local data, once it is up
+(cd hang   && python hang.py load-analytical && python hang.py validate-loaded)
+
+# once it is all up, each stage drops its own copy
+(cd gather && python gather.py cleanup)
+(cd shear  && python3 shear.py cleanup)
+(cd stitch && spark-submit stitch.py cleanup)
 ```
 
 A validator exits 1 on an error — output that is internally inconsistent and
@@ -83,11 +87,15 @@ export PATH="$PWD/.venv/bin:$PATH"
 ## Layout
 
 ```
-gather/   gather.py   scripts/  sites/*.yaml
-shear/    shear.py    scripts/
-stitch/   stitch.py   scripts/  reference/*.yaml
-hang/     hang.py     scripts/
+gather/   gather.py   scripts/  sites/*.yaml       crawl, and put the JSON up
+shear/    shear.py    scripts/                     cut it into Spark-shaped files
+stitch/   stitch.py   scripts/  reference/*.yaml   build the tables, and put them up
+hang/     hang.py     scripts/                     load them, and derive the model
 img/      the analytical model this all feeds
+
+Each stage owns what it produced: it uploads its own output, checks its own
+upload, and deletes its own copy when that is safe. `hang` owns only what
+happens once the data is in Snowflake, and has nothing local to clean up.
 ```
 
 Each `scripts/` is a library with no entry point of its own — there is exactly
