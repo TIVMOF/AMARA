@@ -18,38 +18,46 @@ categories:
     aliases: [Footwear, Sneakers, Lifestyle Shoes, Low Top Sneakers, High Top Sneakers,
               Running Shoes, Boots, Sandals, Sandals And Slippers, Slippers, Trainers,
               Women's Footwear, Womens Footwear, Men's Footwear, Mens Footwear,
-              Kid's Footwear, Kids Footwear, Scarpe, Calzature]
+              Kid's Footwear, Kids Footwear, Scarpe, Calzature, Heels, FLATS, Mules,
+              Loafers, Pumps, Wedges, Ankle Boots]
   T-Shirts:
     aliases: [Tees, Tee, Tshirt, Tshirts, Short Sleeve Tees, Long Sleeve Tees,
-              T-Shirts & Tank Tops, T-Shirts & Polos, Graphic Tees, T Shirts]
+              T-Shirts & Tank Tops, T-Shirts & Polos, Graphic Tees, T Shirts,
+              T-SHIRTS / SHIRTS, T-Shirts & Tops, Polo Shirts, Polo, Polos]
   Tops:
     aliases: [Wovens, Tank Tops, Tanks/Jerseys, Jerseys, Active Tops, Polos, Blouses,
-              Camicie, Bodysuits]
+              Camicie, Bodysuits, MENS TOPS, WOMENS TOPS, Camis]
   Shirts:
     aliases: [Button Up Shirts, Button Down Shirts, Button-Ups, Dress Shirts]
   Knitwear:
-    aliases: [Sweaters, Maglie, Jumpers, Cardigans, Maglieria]
+    aliases: [Sweaters, Maglie, Jumpers, Cardigans, Maglieria, SWEATERS & CARDIGANS,
+              Sweaters & Cardigans, Knits]
   Hoodies:
-    aliases: [Hoodies/Fleece, Sweatshirts, Hoodies & Sweatshirts, Fleece,
-              Crewnecks, Sweats, Felpe]
+    aliases: [Hoodies/Fleece, Sweatshirts, Hoodies & Sweatshirts, Fleece, Crewnecks,
+              Sweats, Felpe, Hoodies & Sweats, Sweatshirts & Hoodies]
   Outerwear:
     aliases: [Jackets, Jackets/Outerwear, Coats And Jackets, Coats, Giacca, Giacche,
-              Giubbotti, Parkas, Vests, Puffers]
+              Giubbotti, Parkas, Vests, Puffers, BLAZERS, Blazers, Blazers & Jackets,
+              Coats & Jackets]
   Pants:
-    aliases: [Trousers, Pantaloni, Sweatpants, Leggings, Bottoms, Chinos,
-              Track Pants, Joggers]
+    aliases: [Trousers, Pantaloni, Sweatpants, Leggings, Bottoms, Chinos, Track Pants,
+              Joggers, MENS BOTTOMS, WOMENS BOTTOMS, ACTIVE BOTTOMS, CARGO PANTS,
+              Cargo Pants]
   Jeans:
     aliases: [Denim, Denim Pants]
   Shorts:
     aliases: [Swim Shorts, Swimwear, Costumi]
   Dresses:
-    aliases: [Abiti, Dress]
+    aliases: [Abiti, Dress, Mini Dresses, Midi Dresses, Maxi Dresses, Dresses & Skirts,
+              Gowns]
   Skirts:
-    aliases: [Gonne]
+    aliases: [Gonne, Mini Skirts, Midi Skirts, Maxi Skirts]
   Accessories:
-    aliases: [Accessori, Small Leather Goods, Belts, Gloves, Scarves, Wallets, Keychains]
+    aliases: [Accessori, Small Leather Goods, Belts, Gloves, Scarves, Wallets, Keychains,
+              WALLETS & CARDHOLDERS, Wallets & Cardholders, Ties]
   Bags:
-    aliases: [Tote Bags, Bags And Backpacks, Backpacks, Borse, Handbags, Luggage]
+    aliases: [Tote Bags, Bags And Backpacks, Backpacks, Borse, Handbags, Luggage, HANDBAG,
+              Handbag, Tracolle, Totes, Crossbody Bags, Shoulder Bags]
   Headwear:
     aliases: [Hats, Caps, Beanies, Cappelli]
   Eyewear:
@@ -63,12 +71,14 @@ categories:
     aliases: [Crew Socks, Hosiery]
   Underwear:
     aliases: [Intimates, Lingerie, Bras, Briefs, Boxers, Shapewear, Shapewear Bottoms,
-              Shapewear Tops]
+              Shapewear Tops, PANTIES, Panties, Lingerie & Nightwear, Sleepwear, Nightwear,
+              Bikini Tops, Bikini Bottoms, Swimwear, Swim, Bikinis]
   Clothing:
     aliases: [Apparel, Ready To Wear, Rtw, Abbigliamento, Women's Apparel,
               Womens Apparel, Men's Apparel, Mens Apparel, Kid's Apparel, Kids Apparel]
   Homeware:
-    aliases: [Home, Furniture, Textiles, Casa]
+    aliases: [Home, Furniture, Textiles, Casa, Decor & Accessories, Candles & Fragrances,
+              Candles & Incense, Candles, Home & Living]
   Books:
     aliases: [Books And Magazines, Magazines, Print]
   Beauty:
