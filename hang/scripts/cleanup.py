@@ -1,15 +1,8 @@
 from __future__ import annotations
 
 import shutil
-from pathlib import Path
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOTS = (
-    PROJECT_ROOT / "gather" / "data",
-    PROJECT_ROOT / "shear" / "data",
-    PROJECT_ROOT / "stitch" / "data",
-)
+from .paths import DATA_ROOTS
 
 
 def clear_data() -> None:
@@ -22,7 +15,3 @@ def clear_data() -> None:
                 shutil.rmtree(path)
             else:
                 path.unlink()
-
-
-if __name__ == "__main__":
-    clear_data()

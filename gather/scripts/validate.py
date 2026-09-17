@@ -8,13 +8,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator, NamedTuple
 
-from scripts import registry
-from scripts.adapters.shopify import PAGE_SIZE, UNFILTERED_LABEL
+from . import registry
+from .adapters.shopify import PAGE_SIZE, UNFILTERED_LABEL
 
-USAGE = ("python validate_gather.py              every retailer file in data/\n"
-         "python validate_gather.py kith agjeans   named retailers only")
+USAGE = ("python gather.py validate              every retailer file in data/\n"
+         "python gather.py validate kith agjeans   named retailers only")
 
-RAW_ROOT = Path(__file__).resolve().parent / "data"
+# parents[1] is the component root: this module lives in gather/scripts/.
+RAW_ROOT = Path(__file__).resolve().parents[1] / "data"
 
 # gather writes <retailer>-<stamp>.json. The stamp carries no hyphen, so the
 # last one splits the two whatever the retailer is called.
@@ -179,12 +180,12 @@ def validate(only: list[str] | None = None, root: Path = RAW_ROOT) -> list[Findi
     print(f"\n{crawls} crawl(s), {products:,} products stored")
     return findings
 
-def main() -> None:
-    parser = argparse.ArgumentParser(prog="python validate_gather.py",
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="python gather.py validate",
         description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("retailers", nargs="*", help="default is every retailer")
     parser.add_argument("--raw", type=Path, default=RAW_ROOT, help="the raw crawls")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     findings = validate(args.retailers or None, args.raw)
     for level in (ERROR, WARN):
         if hits := [f for f in findings if f.level == level]:
@@ -195,6 +196,3 @@ def main() -> None:
     if errors:
         raise SystemExit(f"\nFAILED: {errors} error(s), {warnings} warning(s)")
     print("\nOK: no errors" + (f", {warnings} warning(s)" if warnings else ""))
-
-if __name__ == "__main__":
-    main()

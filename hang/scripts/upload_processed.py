@@ -1,41 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 
-import snowflake.connector
-from dotenv import load_dotenv
+from . import paths
+from .connection import connect, env
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PROCESSED_ROOT = PROJECT_ROOT / "stitch" / "data"
-
-ENV_PATH = Path(__file__).resolve().parent / ".env"
-load_dotenv(ENV_PATH)
-
-
-def env(name: str) -> str:
-    value = os.getenv(f"AMARA_SNOWFLAKE_{name}")
-
-    if not value:
-        raise SystemExit(
-            f"Missing environment variable: AMARA_SNOWFLAKE_{name}"
-        )
-
-    return value
-
-
-def connect():
-    return snowflake.connector.connect(
-        account=env("ACCOUNT"),
-        user=env("USER"),
-        token=env("TOKEN"),
-        authenticator="PROGRAMMATIC_ACCESS_TOKEN",
-        warehouse=env("WAREHOUSE"),
-        database=env("DATABASE"),
-        schema=env("PROCESSED_SCHEMA"),
-    )
+DEFAULT_PROCESSED_ROOT = paths.PROCESSED_ROOT
 
 
 def datasets(root: Path) -> list[tuple[str, list[Path]]]:
@@ -66,7 +38,7 @@ def upload(processed_root: Path) -> None:
     database = env("DATABASE")
     schema = env("PROCESSED_SCHEMA")
 
-    connection = connect()
+    connection = connect(env("PROCESSED_SCHEMA"))
 
     try:
         with connection.cursor() as cursor:
@@ -98,7 +70,7 @@ def upload(processed_root: Path) -> None:
         connection.close()
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Upload the current AMARA processed datasets."
     )
@@ -111,10 +83,6 @@ def main() -> None:
         help="Current processed output directory.",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     upload(args.processed_root)
-
-
-if __name__ == "__main__":
-    main()

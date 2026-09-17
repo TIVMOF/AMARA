@@ -6,8 +6,8 @@ Takes raw crawls apart into files Spark can read.
 python shear.py                     # the single crawl under gather/data
 python shear.py path/to/crawl.json  # one crawl
 
-python3 validate_shear.py           # is the staged output sound?
-python3 validate_shear.py kith      # one site
+python3 shear.py validate           # is the staged output sound?
+python3 shear.py validate kith      # one site
 ```
 
 No dependencies beyond the standard library, so this is the one stage that
@@ -53,7 +53,7 @@ of `{vendor, products}` records.
 
 ```
 shear.py            the entry point
-validate_shear.py   checking what it wrote
+scripts/validate.py  checking what it wrote
 scripts/split.py      one crawl end to end, and all of them
 scripts/raw.py            reading a raw crawl and splitting it up
 scripts/staging.py        writing the three files
@@ -62,7 +62,7 @@ scripts/paths.py          where things live
 
 ## Validating
 
-`validate_shear.py` checks that the shape change lost nothing: the line
+`shear.py validate` checks that the shape change lost nothing: the line
 count against `crawl.json`, that no product kept its `variants` key, that every
 variant names a product that exists, and that every row's `site` and
 `scraped_at` match the directory it sits in — that is what lets rows from
