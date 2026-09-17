@@ -1,19 +1,29 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-from scripts import paths, split
+from scripts import paths, split, validate
 
 
 # What --help prints above the options.
 USAGE = """\
 python shear.py                     the current crawl under gather/data
 python shear.py path/to/crawl.json  one retailer's file
+python shear.py validate            is the sheared output sound?
 """
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
+    # `validate` is handed straight to the validator with the rest of the command
+    # line intact, so it keeps its own arguments rather than having them
+    # re-declared here and kept in step by hand.
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "validate":
+        validate.main(argv[1:])
+        return 0
+
     parser = argparse.ArgumentParser(
         prog="python shear.py",
         description=USAGE,
@@ -25,7 +35,7 @@ def main() -> None:
                         help="directory holding the raw crawls")
     parser.add_argument("--staging", type=Path, default=paths.STAGING_ROOT,
                         help="directory to write the staged files into")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     targets = [args.input] if args.input else split.find_single_raw(args.raw)
     if args.input and args.input.is_dir():
@@ -38,7 +48,8 @@ def main() -> None:
         directory, products, variants = split.shear(input_path, args.staging)
         print(f"{products:,} products and {variants:,} variants "
               f"-> {paths.relative(directory)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

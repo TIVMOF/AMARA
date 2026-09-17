@@ -9,8 +9,7 @@ spark-submit stitch.py
 spark-submit stitch.py --crawl PATH
 spark-submit stitch.py --dry-run
 
-python validate_stitch.py            # is the output sound?
-python validate_stitch.py --strict   # warnings fail too
+spark-submit stitch.py validate      # is the output sound?
 ```
 
 Spark needs a JVM; 21 is what Spark 4 wants. `--dry-run` builds and reports
@@ -172,7 +171,7 @@ colourway the product lists, on `variants` the one that variant is.
 
 ```
 stitch.py             the entry point, and the run end to end
-validate_stitch.py checking what it wrote
+scripts/validate.py checking what it wrote
 scripts/reference.py   YAML vocabularies, and keeping their parquets in step
 scripts/staging.py     reading what shear wrote
 scripts/tables.py      the tables this stage writes

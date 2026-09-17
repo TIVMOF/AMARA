@@ -34,11 +34,11 @@ python gather.py probe example.com           # can this site be scraped?
 python gather.py sites                       # what is configured
 python gather.py collections kith            # what a store publishes
 
-python validate_gather.py                    # is what was collected sound?
-python validate_gather.py kith --strict      # one retailer, warnings fail too
+python gather.py validate                    # is what was collected sound?
+python gather.py validate kith               # one retailer
 ```
 
-`validate_gather.py` is a separate command, run after a crawl. It recomputes
+`gather.py validate` is a separate command, run after a crawl. It recomputes
 every counter a crawl file claims - `products_stored` against the bodies,
 `products_received` against the page trace, the vendor tally against the
 vendors - and checks the page-by-page trace against the bodies in both

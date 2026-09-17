@@ -6,12 +6,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterator, NamedTuple
 
-from scripts import paths
-from scripts.raw import CRAWL_FIELDS
+from . import paths
+from .raw import CRAWL_FIELDS
 
 USAGE = """\
-python validate_shear.py         every sheared crawl
-python validate_shear.py kith    named sites only
+python shear.py validate         every sheared crawl
+python shear.py validate kith    named sites only
 """
 
 STAGED_FILES = ("crawl.json", "products.jsonl", "variants.jsonl")
@@ -168,13 +168,13 @@ def validate(only: list[str] | None, staging: Path, raw: Path) -> list[Finding]:
     print(f"\n{crawls} staged crawl(s), {products:,} products, {variants:,} variants")
     return findings
 
-def main() -> None:
-    parser = argparse.ArgumentParser(prog="python validate_shear.py",
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="python shear.py validate",
         description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("sites", nargs="*", help="default is every staged site")
     parser.add_argument("--staging", type=Path, default=paths.STAGING_ROOT)
     parser.add_argument("--raw", type=Path, default=paths.RAW_ROOT)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     findings = validate(args.sites or None, args.staging, args.raw)
     for level in (ERROR, WARN):
         if hits := [f for f in findings if f.level == level]:
@@ -185,6 +185,3 @@ def main() -> None:
         raise SystemExit(f"\nFAILED: {errors} error(s), "
                          f"{len(findings) - errors} warning(s)")
     print("\nOK: no errors" + (f", {len(findings)} warning(s)" if findings else ""))
-
-if __name__ == "__main__":
-    main()

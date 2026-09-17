@@ -7,12 +7,12 @@ from typing import Iterator, NamedTuple
 
 import pyarrow.parquet as pq
 
-from scripts import paths
-from scripts.tables import MAX_PLAUSIBLE_DISCOUNT
+from . import paths
+from .tables import MAX_PLAUSIBLE_DISCOUNT
 
 # Read with pyarrow, not Spark: 79 MB, and checking the output with a different
 # engine than the one that wrote it is the point.
-USAGE = "python validate_stitch.py    every table under stitch/data"
+USAGE = "spark-submit stitch.py validate    every table under stitch/data"
 
 ERROR, WARN = "ERROR", "WARN"
 
@@ -181,12 +181,12 @@ def validate(root: Path, staging: Path) -> list[Finding]:
         print(f"  {name:11} {table.num_rows:>11,}   {fills or '-'}")
     return findings
 
-def main() -> None:
-    parser = argparse.ArgumentParser(prog="python validate_stitch.py",
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="spark-submit stitch.py validate",
         description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--processed", type=Path, default=paths.OUTPUT_ROOT)
     parser.add_argument("--staging", type=Path, default=paths.STAGING_ROOT)
-    findings = validate(*vars(parser.parse_args()).values())
+    findings = validate(*vars(parser.parse_args(argv)).values())
     for level in (ERROR, WARN):
         if hits := [f for f in findings if f.level == level]:
             print(f"\n{level}S ({len(hits)})")
@@ -195,6 +195,3 @@ def main() -> None:
     if errors:
         raise SystemExit(f"\nFAILED: {errors} error(s), {len(findings) - errors} warning(s)")
     print("\nOK: no errors" + (f", {len(findings)} warning(s)" if findings else ""))
-
-if __name__ == "__main__":
-    main()

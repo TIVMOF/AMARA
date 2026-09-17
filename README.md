@@ -33,17 +33,19 @@ That matters downstream: `products` and `variants` are cumulative in Snowflake,
 and a row is told apart from the same product in an earlier crawl **by date
 alone**. Two dates inside one run would make one product look like two.
 
-So `cleanup.py` runs at the end of every pass, and the next crawl starts from
-an empty `data/`. `validate_gather.py` fails if it finds more than one crawl.
+So `hang.py cleanup` runs at the end of every pass, and the next crawl starts
+from an empty `data/`. `gather.py validate` fails if it finds more than one
+crawl.
 
 ```bash
-(cd gather && python gather.py crawl        && python validate_gather.py)
-(cd shear  && python3 shear.py              && python3 validate_shear.py)
-(cd stitch && spark-submit stitch.py        && python validate_stitch.py)
-(cd hang   && python upload_raw.py)         # raw       -> the RAW stage
-(cd hang   && python upload_processed.py)   # parquets  -> the PROCESSED stage
-(cd hang   && python load_processed.py)     # that stage -> Snowflake tables
-(cd hang   && python cleanup.py)            # drop the local data, once it is up
+(cd gather && python gather.py crawl        && python gather.py validate)
+(cd shear  && python3 shear.py              && python3 shear.py validate)
+(cd stitch && spark-submit stitch.py        && spark-submit stitch.py validate)
+(cd hang   && python hang.py upload-raw       && python hang.py validate-raw)
+(cd hang   && python hang.py upload-processed && python hang.py validate-processed)
+(cd hang   && python hang.py load-processed)
+(cd hang   && python hang.py load-analytical  && python hang.py validate-loaded)
+(cd hang   && python hang.py cleanup)       # drop the local data, once it is up
 ```
 
 A validator exits 1 on an error — output that is internally inconsistent and
@@ -81,10 +83,10 @@ export PATH="$PWD/.venv/bin:$PATH"
 ## Layout
 
 ```
-gather/   gather.py   validate_gather.py   scripts/  sites/*.yaml
-shear/    shear.py    validate_shear.py    scripts/
-stitch/   stitch.py   validate_stitch.py   scripts/  reference/*.yaml
-hang/     upload_raw.py  upload_processed.py  load_processed.py  cleanup.py
+gather/   gather.py   scripts/  sites/*.yaml
+shear/    shear.py    scripts/
+stitch/   stitch.py   scripts/  reference/*.yaml
+hang/     hang.py     scripts/
 img/      the analytical model this all feeds
 ```
 

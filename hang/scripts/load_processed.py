@@ -1,39 +1,6 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
-import snowflake.connector
-from dotenv import load_dotenv
-
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-ENV_PATH = Path(__file__).resolve().parent / ".env"
-load_dotenv(ENV_PATH)
-
-
-def env(name: str) -> str:
-    value = os.getenv(f"AMARA_SNOWFLAKE_{name}")
-
-    if not value:
-        raise SystemExit(
-            f"Missing environment variable: AMARA_SNOWFLAKE_{name}"
-        )
-
-    return value
-
-
-def connect():
-    return snowflake.connector.connect(
-        account=env("ACCOUNT"),
-        user=env("USER"),
-        token=env("TOKEN"),
-        authenticator="PROGRAMMATIC_ACCESS_TOKEN",
-        warehouse=env("WAREHOUSE"),
-        database=env("DATABASE"),
-        schema=env("PROCESSED_SCHEMA"),
-    )
+from .connection import connect, env
 
 
 def column_list(columns: str) -> list[str]:
@@ -154,7 +121,7 @@ def load() -> None:
     database = env("DATABASE")
     schema = env("PROCESSED_SCHEMA")
 
-    connection = connect()
+    connection = connect(env("PROCESSED_SCHEMA"))
 
     try:
         with connection.cursor() as cursor:
@@ -368,7 +335,3 @@ def load() -> None:
 
     finally:
         connection.close()
-
-
-if __name__ == "__main__":
-    load()

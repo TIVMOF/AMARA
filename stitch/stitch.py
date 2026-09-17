@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from pyspark.sql import DataFrame, SparkSession
 
-from scripts import paths, reference, staging, tables
+from scripts import paths, reference, staging, tables, validate
 
 
 # What --help prints above the options.
@@ -13,6 +14,7 @@ USAGE = """\
 spark-submit stitch.py              the single staged crawl
 spark-submit stitch.py --crawl PATH an explicit staged crawl directory
 spark-submit stitch.py --dry-run    build and report, write nothing
+spark-submit stitch.py validate     is the stitched output sound?
 """
 
 
@@ -111,7 +113,15 @@ def run(spark: SparkSession, *, crawl: Path | list[Path] | None = None,
 
 # ── cli ─────────────────────────────────────────────────────────────────────
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
+    # `validate` is handed straight to the validator with the rest of the command
+    # line intact, so it keeps its own arguments rather than having them
+    # re-declared here and kept in step by hand.
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "validate":
+        validate.main(argv[1:])
+        return 0
+
     parser = argparse.ArgumentParser(
         prog="spark-submit stitch.py",
         description=USAGE,
@@ -121,14 +131,15 @@ def main() -> None:
                         help="build the table and report, but write no data tables")
     parser.add_argument("--crawl", type=Path,
                         help="explicit staged crawl directory for a retry")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     spark = build_session()
     try:
         run(spark, crawl=args.crawl, dry_run=args.dry_run)
     finally:
         spark.stop()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

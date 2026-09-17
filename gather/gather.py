@@ -5,7 +5,7 @@ import logging
 import sys
 from datetime import datetime, timezone
 
-from scripts import registry, store
+from scripts import registry, store, validate
 from scripts.fetch import ConfigError, FetchError, Fetcher
 from scripts.adapters.shopify import MAX_PAGE as PAGE_CEILING, PAGE_SIZE
 from scripts.probe import probe, suggest_yaml
@@ -19,6 +19,7 @@ python gather.py crawl kith --max-pages 2   short run, for a look at the data
 python gather.py probe example.com          can this domain be scraped?
 python gather.py sites                      what is configured
 python gather.py collections kith           what a store publishes
+python gather.py validate                   is the crawl output sound?
 """
 
 
@@ -157,6 +158,14 @@ def list_sites(args: argparse.Namespace) -> int:
 # ── cli ─────────────────────────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
+    # `validate` is handed straight to the validator with the rest of the command
+    # line intact, so it keeps its own arguments rather than having them
+    # re-declared here and kept in step by hand.
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "validate":
+        validate.main(argv[1:])
+        return 0
+
     parser = argparse.ArgumentParser(
         prog="python gather.py",
         description=USAGE,
