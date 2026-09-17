@@ -28,6 +28,20 @@ THROTTLE_ATTEMPTS = 6
 THROTTLE_BACKOFF = 1.5      # multiplies the interval on every 429
 MAX_INTERVAL = 30.0         # seconds between requests, ceiling
 
+# Backing off used to be permanent: min_interval only ever grew, so the first
+# burst of 429s set the pace for everything after it. On brownsfashion a single
+# 429 at page 66 of the unfiltered listing held the next ~250 requests at
+# 0.67/s, and a burst inside one collection drove the rate to the MAX_INTERVAL
+# floor - one request every 30s - where the remaining ~35 collections then had
+# to be crawled. Hours of crawl, for a burst that lasted seconds.
+#
+# So: widen hard when the host pushes back, ease off gradually once it stops.
+# The two are deliberately asymmetric - 1.5x up against 0.75x down - so the rate
+# settles below whatever triggered the throttling rather than oscillating onto
+# it. Timing only; no page is fetched or skipped because of this.
+RECOVERY_AFTER = 10         # consecutive clean requests before easing off
+RECOVERY_FACTOR = 0.75      # multiplies the interval on each easing
+
 
 # ── errors ──────────────────────────────────────────────────────────────────
 
@@ -87,8 +101,9 @@ class Fetcher:
     # default from .env.
     #
     # The rate is a starting point, not a fixed setting. A 429 means the host has
-    # told us it is wrong, so the interval widens for the rest of the crawl
-    # rather than the request simply being retried at the speed that caused it.
+    # told us it is wrong, so the interval widens rather than the request simply
+    # being retried at the speed that caused it - and narrows again, back toward
+    # this rate but never past it, once the host stops pushing back.
 
     def __init__(self, rate_limit_rps: float | None = None,
                  timeout: int | None = None, max_retries: int | None = None) -> None:
@@ -99,6 +114,7 @@ class Fetcher:
         self.max_retries = max_retries if max_retries is not None else int(env("MAX_RETRIES"))
 
         self._last_request_at = 0.0
+        self._clean_streak = 0    # clean requests since the last 429
         self.throttled = 0        # how many 429s this crawl has seen
         self.min_interval_initial = self.min_interval
         self.session = requests.Session()
@@ -119,8 +135,9 @@ class Fetcher:
         self._last_request_at = time.monotonic()
 
     def _back_off(self, response: requests.Response) -> float:
-        # React to a 429: widen the interval for good, and wait as asked.
+        # React to a 429: widen the interval, and wait as asked.
         self.throttled += 1
+        self._clean_streak = 0
         previous = self.min_interval
         self.min_interval = min(self.min_interval * THROTTLE_BACKOFF or 1.0, MAX_INTERVAL)
         wait = _retry_after(response)
@@ -130,6 +147,26 @@ class Fetcher:
                     1 / previous if previous else 0,
                     1 / self.min_interval if self.min_interval else 0, wait)
         return min(wait, MAX_INTERVAL * 2)
+
+    def _recover(self) -> None:
+        # Ease back toward the configured rate after a clean run of requests.
+        #
+        # Only ever back toward it: min_interval_initial is the floor, so this
+        # cannot crawl a host faster than its config allows. A crawl with no
+        # configured rate limit is left at whatever a 429 forced - there is no
+        # rate to return to, and the host has already said the unlimited one
+        # was wrong.
+        if self.min_interval_initial <= 0 or self.min_interval <= self.min_interval_initial:
+            return
+        self._clean_streak += 1
+        if self._clean_streak < RECOVERY_AFTER:
+            return
+        self._clean_streak = 0
+        previous = self.min_interval
+        self.min_interval = max(self.min_interval * RECOVERY_FACTOR,
+                                self.min_interval_initial)
+        log.info("  %d clean requests - speeding %.2f/s -> %.2f/s",
+                 RECOVERY_AFTER, 1 / previous, 1 / self.min_interval)
 
     def get_json(self, url: str, *, allow_404: bool = False) -> Any | None:
         # GET a URL and parse it as JSON.
@@ -175,11 +212,15 @@ class Fetcher:
                 raise FetchError(f"{url} -> HTTP {response.status_code}")
 
             try:
-                return response.json()
+                payload = response.json()
             except ValueError:
                 # A store sitting behind a bot-wall answers 200 with an HTML
                 # challenge page. Fatal, not retryable.
                 snippet = response.text[:120].replace("\n", " ")
                 raise FetchError(f"{url} -> 200 but not JSON: {snippet!r}") from None
+            # Counted only once the response proved usable, so a bot-wall
+            # serving 200s cannot look like a healthy streak.
+            self._recover()
+            return payload
 
         raise FetchError(f"{url} -> gave up after {attempt - 1} attempts ({last_error})")
