@@ -6,7 +6,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-import requests
+from curl_cffi import requests
+from curl_cffi.requests import exceptions as requests_exceptions
 from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
@@ -20,6 +21,29 @@ load_dotenv(ENV_PATH)
 
 RETRY_STATUS = {500, 502, 503, 504}
 THROTTLE_STATUS = 429
+
+# Requests go out with a real browser's TLS handshake, not Python's.
+#
+# Several of these stores sit behind Cloudflare, which fingerprints the TLS
+# ClientHello and scores it. urllib3's is recognisably not a browser, and once a
+# store decides it has seen enough of it the answer to every request becomes 429
+# - permanently, for that fingerprint, while the same URL keeps serving anyone
+# else. Measured on three stores at once, same process, same headers, seconds
+# apart:
+#
+#     fillingpieces   urllib3: 429    browser TLS: 200 (250 products)
+#     feature         urllib3: 429    browser TLS: 200 (250 products)
+#     brownsfashion   urllib3: 429    browser TLS: 200 (250 products)
+#
+# This is why slowing down appeared to help and then stopped helping: a lower
+# rate takes longer to trip the detector, it does not avoid it. No rate setting
+# recovers a fingerprint that has already been flagged, and no amount of waiting
+# clears one - ten minutes of total silence did not.
+#
+# `chrome` tracks curl_cffi's newest Chrome profile rather than pinning a
+# version, because the value of this is looking current, and a pinned profile
+# ages into looking like an old browser - which is its own signal.
+IMPERSONATE = "chrome"
 
 # A throttled host gets a more patient budget than a flaky one: a 429 is the
 # server telling us the rate is wrong, and it will keep being wrong until we
@@ -101,7 +125,7 @@ class Fetcher:
         self._last_request_at = 0.0
         self.throttled = 0        # how many 429s this crawl has seen
         self.min_interval_initial = self.min_interval
-        self.session = requests.Session()
+        self.session = requests.Session(impersonate=IMPERSONATE)
         # No Accept-Language on purpose. Some stores treat it as a request for
         # a locale-filtered catalogue and silently serve fewer products -
         # notre-shop drops from 249 to 142 per page. See issue #6. A site that
@@ -147,7 +171,7 @@ class Fetcher:
             self._throttle()
             try:
                 response = self.session.get(url, timeout=self.timeout)
-            except requests.RequestException as exc:
+            except requests_exceptions.RequestException as exc:
                 last_error = f"{type(exc).__name__}: {exc}"
                 log.warning("  %s (%d/%d) %s", url, attempt, self.max_retries, last_error)
                 time.sleep(2 ** attempt)
