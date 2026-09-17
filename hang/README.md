@@ -23,6 +23,17 @@ writes no local file, and the only temporary tables it makes are Snowflake
 its own `data/` — `gather.py cleanup`, `shear.py cleanup`,
 `spark-submit stitch.py cleanup` — once its output is safely up.
 
+## In a container
+
+`amara-hang`, built from the `Dockerfile` here. It takes **no volume**:
+everything it works on is already in Snowflake, and this stage builds exactly
+one path in its whole source. All eight `AMARA_SNOWFLAKE_*` values are passed
+at run time.
+
+```bash
+docker run --rm --init -e AMARA_SNOWFLAKE_TOKEN="$TOKEN" amara-hang load-processed
+```
+
 ## Checking the load
 
 `validate-loaded` covers both loaded layers in one command, because the

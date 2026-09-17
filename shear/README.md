@@ -14,6 +14,20 @@ python3 shear.py cleanup            # empty data/, once it is stitched
 No dependencies beyond the standard library, so this is the one stage that
 runs on a bare `python3` with no virtualenv.
 
+## In a container
+
+`amara-shear`, built from the `Dockerfile` here. No pip install and no config
+files — this stage is standard library only.
+
+`AMARA_GATHERED_DIR` is read, `AMARA_SHEARED_DIR` is written; both default to
+the sibling paths above when unset. Give the container 4 GB: a crawl file is
+read into memory whole, and the largest is ~308 MB.
+
+```bash
+docker run --rm --init -v amara_gathered:/data/gathered:ro \
+                       -v amara_sheared:/data/sheared amara-shear
+```
+
 ## Why this stage exists
 
 Ingestion writes one JSON object per crawl, with product bodies keyed by

@@ -1,13 +1,44 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 from .site_config import SiteConfig
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data"
+
+
+def _dir(variable: str, default: Path) -> Path:
+    # This stage's output directory, overridable from the environment.
+    #
+    # The default is where the data sits in a checkout, so a local run needs no
+    # setup. The variable is how a container is told where its own storage is:
+    # it names a directory inside whatever filesystem this process can see and
+    # says nothing about what backs it - a docker volume, a bind mount or the
+    # container's own writable layer are all the same to this code.
+    #
+    # sites/ is deliberately not overridable: it is versioned config that ships
+    # beside this code, not data that arrives from somewhere else.
+    value = os.getenv(variable)
+    return Path(value) if value else default
+
+
+DATA_DIR = _dir("AMARA_GATHERED_DIR", ROOT / "data")
+
+
+def relative(path: Path) -> str:
+    # A path as it reads in the run log.
+    #
+    # The fallback is not decoration: once DATA_DIR can point outside the
+    # component - which is the whole point of the variable - a bare
+    # relative_to() raises ValueError and takes the run down after the file
+    # has already been written.
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
 
 
 def _stamp(scraped_at: str) -> str:

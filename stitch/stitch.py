@@ -14,6 +14,7 @@ from scripts import (cleanup, paths, reference, staging, tables, upload_processe
 USAGE = """\
 spark-submit stitch.py              the single staged crawl
 spark-submit stitch.py --crawl PATH an explicit staged crawl directory
+spark-submit stitch.py --output DIR where to write the tables
 spark-submit stitch.py --dry-run    build and report, write nothing
 spark-submit stitch.py validate     is the stitched output sound?
 spark-submit stitch.py upload       the parquets -> the PROCESSED stage
@@ -41,12 +42,13 @@ def build_session() -> SparkSession:
     return spark
 
 
-def sync_reference(spark: SparkSession) -> dict[str, reference.Reference]:
+def sync_reference(spark: SparkSession,
+                   output_root: Path) -> dict[str, reference.Reference]:
     # Bring every reference parquet in step with its YAML.
     print("Reference data")
     loaded = {}
     for vocabulary in reference.load_all():
-        added, total = reference.sync(spark, vocabulary)
+        added, total = reference.sync(spark, vocabulary, output_root)
         loaded[vocabulary.name] = vocabulary
         note = f"+{added} new" if added else "unchanged"
         print(f"  {vocabulary.name:12} {total:>4} values  ({note})")
@@ -67,21 +69,25 @@ def report_unmatched(staged: DataFrame, column: str,
     print(f"  unmatched {column}: {preview}{more}")
 
 
-def write(frame: DataFrame, name: str, *, dry_run: bool) -> None:
+def write(frame: DataFrame, name: str, *, output_root: Path, dry_run: bool) -> None:
     rows = frame.count()
     if dry_run:
         print(f"  {name:12} {rows:>11,} rows  (not written)")
         return
-    path = paths.OUTPUT_ROOT / name
+    path = output_root / name
     frame.write.mode("overwrite").parquet(str(path))
     print(f"  {name:12} {rows:>11,} rows  -> {paths.relative(path)}")
 
 
 def run(spark: SparkSession, *, crawl: Path | list[Path] | None = None,
+        staging_root: Path | None = None, output_root: Path | None = None,
         dry_run: bool) -> None:
-    vocabularies = sync_reference(spark)
+    staging_root = paths.STAGING_ROOT if staging_root is None else staging_root
+    output_root = paths.OUTPUT_ROOT if output_root is None else output_root
 
-    crawl = crawl or staging.find_single_crawl(paths.STAGING_ROOT)
+    vocabularies = sync_reference(spark, output_root)
+
+    crawl = crawl or staging.find_single_crawl(staging_root)
     if isinstance(crawl, (list, tuple)) and crawl:
         print(f"\nStaged crawl {paths.relative(crawl[0])}")
     else:
@@ -103,14 +109,14 @@ def run(spark: SparkSession, *, crawl: Path | list[Path] | None = None,
 
     print("\nData tables")
     write(tables.crawls(staged.crawls, vocabularies["currencies"]),
-          "crawls", dry_run=dry_run)
+          "crawls", output_root=output_root, dry_run=dry_run)
     write(tables.retailers(staged.crawls, vocabularies["countries"]),
-          "retailers", dry_run=dry_run)
-    write(tables.dates(staged.crawls), "dates", dry_run=dry_run)
-    write(catalogue, "products", dry_run=dry_run)
+          "retailers", output_root=output_root, dry_run=dry_run)
+    write(tables.dates(staged.crawls), "dates", output_root=output_root, dry_run=dry_run)
+    write(catalogue, "products", output_root=output_root, dry_run=dry_run)
     write(tables.variants(staged.products, staged.variants, staged.crawls,
                           catalogue, vocabularies["currencies"]),
-          "variants", dry_run=dry_run)
+          "variants", output_root=output_root, dry_run=dry_run)
 
     print("\nDone.")
 
@@ -126,8 +132,11 @@ def main(argv: list[str] | None = None) -> int:
                           ("validate-upload", validate_upload.main),
                           ("cleanup", cleanup.main)):
         if argv and argv[0] == name:
-            command(argv[1:])
-            return 0
+            # `or 0` because these signal failure by raising SystemExit
+            # rather than returning. Dropping the return value would turn a
+            # validator that ever starts returning a code into a silent
+            # success, which under Airflow is a green task on bad data.
+            return command(argv[1:]) or 0
 
     parser = argparse.ArgumentParser(
         prog="spark-submit stitch.py",
@@ -138,11 +147,16 @@ def main(argv: list[str] | None = None) -> int:
                         help="build the table and report, but write no data tables")
     parser.add_argument("--crawl", type=Path,
                         help="explicit staged crawl directory for a retry")
+    parser.add_argument("--staging", type=Path, default=paths.STAGING_ROOT,
+                        help="directory holding the sheared crawl")
+    parser.add_argument("--output", type=Path, default=paths.OUTPUT_ROOT,
+                        help="directory to write the parquet tables into")
     args = parser.parse_args(argv)
 
     spark = build_session()
     try:
-        run(spark, crawl=args.crawl, dry_run=args.dry_run)
+        run(spark, crawl=args.crawl, staging_root=args.staging,
+            output_root=args.output, dry_run=args.dry_run)
     finally:
         spark.stop()
     return 0

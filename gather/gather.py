@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import signal
 import sys
 from datetime import datetime, timezone
 
@@ -17,6 +18,7 @@ USAGE = """\
 python gather.py crawl                      every enabled site
 python gather.py crawl brownsfashion kith   named sites only
 python gather.py crawl kith --max-pages 2   short run, for a look at the data
+python gather.py crawl kith --scraped-at STAMP   add a site to an earlier crawl
 python gather.py probe example.com          can this domain be scraped?
 python gather.py sites                      what is configured
 python gather.py collections kith           what a store publishes
@@ -25,6 +27,43 @@ python gather.py upload                     the crawl JSON -> the RAW stage
 python gather.py validate-upload            is every crawl file in the stage?
 python gather.py cleanup                    empty data/, once it is uploaded
 """
+
+# The shape store._stamp turns into a filename, and validate reads a date back
+# out of. Not cosmetic: a malformed stamp would split one crawl across two.
+STAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def crawl_stamp(value: str) -> str:
+    # A stamp from an earlier run, so a retry can crawl only the sites that are
+    # missing and still land inside the same crawl.
+    try:
+        datetime.strptime(value, STAMP_FORMAT)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"expected a UTC stamp like 2026-09-17T05:59:45Z, got {value!r}")
+    return value
+
+
+def _interrupt(signum: int, frame: object) -> None:
+    raise KeyboardInterrupt
+
+
+def _stop_cleanly_on_sigterm() -> None:
+    # A crawl runs for hours, and `docker stop` - or an Airflow task kill -
+    # sends SIGTERM. Raising KeyboardInterrupt hands it to the handler Ctrl-C
+    # already uses, which exits 130 with every finished retailer on disk:
+    # store.write runs once per site, so only the site in flight is lost.
+    # Measured: a stop mid-crawl returns in 0.2s with exit 130, against 10s
+    # and a SIGKILL without this.
+    #
+    # This covers the run, not the boot. An exec-form ENTRYPOINT makes Python
+    # PID 1, and the kernel disables PID 1's *default* signal actions - so in
+    # the moment before this line runs, a SIGTERM is dropped silently and the
+    # stop costs the full grace period (measured: 10.1s, exit 137). Closing
+    # that window needs an init process, so run these images with `docker run
+    # --init` / compose's `init: true`, which puts tini at PID 1 and leaves
+    # Python as an ordinary child whose default action works from the start.
+    signal.signal(signal.SIGTERM, _interrupt)
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -45,11 +84,15 @@ def run_crawl(args: argparse.Namespace) -> int:
         return 1
 
     # One run is one crawl on one date. The timestamp is taken once here and
-    # given to every site, so a run lasting 18 hours - which a full crawl does -
+    # given to every site, so a run lasting hours - which a full crawl does -
     # cannot straddle midnight and split itself across two dates. Products and
     # variants are told apart from an earlier crawl's by date alone, so two
     # dates inside one run would make the same product look like two.
-    scraped_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    #
+    # --scraped-at passes an earlier run's stamp back in, which is what makes a
+    # retry possible: crawl the sites that are missing, and they join the crawl
+    # that is already on disk rather than starting a second one.
+    scraped_at = args.scraped_at or datetime.now(timezone.utc).strftime(STAMP_FORMAT)
 
     print(f"{len(sites)} site(s) to crawl, stamped {scraped_at}\n")
     failures = 0
@@ -69,7 +112,7 @@ def run_crawl(args: argparse.Namespace) -> int:
         scope = (f" across {result['collections_crawled']} collections"
                  if result.get("collections_crawled") else "")
         print(f"  {result['seen_unique']} products from {result['seen_raw']} "
-              f"deliveries{scope} -> {path.relative_to(store.ROOT)}")
+              f"deliveries{scope} -> {store.relative(path)}")
 
         for listing in result.get("listings", []):
             reason = listing["stopped_reason"]
@@ -87,9 +130,14 @@ def run_crawl(args: argparse.Namespace) -> int:
             print(f"  throttled {result['throttled']}x - rate backed off from "
                   f"{result['rate_limit_start']}/s to {result['rate_limit_final']}/s")
 
+        # Reported, but not counted: the site's file was written, holding
+        # everything collected around the gap. Only a site that failed outright
+        # - the FetchError above - fails the run. Counting pages here meant one
+        # bad request in ~5,000 failed a whole crawl, which also disagreed with
+        # the INCOMPLETE branch above, where a listing cut short by a failed
+        # request is only ever reported.
         for err in result.get("errors", []):
             print(f"    error on page {err['page']}: {err['error']}")
-            failures += 1
         if result.get("short_pages"):
             print(f"  note: {result['short_pages']} of {result['pages_fetched']} pages came "
                   f"back under {PAGE_SIZE} items after retries")
@@ -176,8 +224,11 @@ def main(argv: list[str] | None = None) -> int:
                           ("validate-upload", validate_upload.main),
                           ("cleanup", cleanup.main)):
         if argv and argv[0] == name:
-            command(argv[1:])
-            return 0
+            # `or 0` because these signal failure by raising SystemExit rather
+            # than returning. Dropping the return value would turn a validator
+            # that ever starts returning a code into a silent success, which
+            # under Airflow is a green task on bad data.
+            return command(argv[1:]) or 0
 
     parser = argparse.ArgumentParser(
         prog="python gather.py",
@@ -190,6 +241,9 @@ def main(argv: list[str] | None = None) -> int:
     crawl = sub.add_parser("crawl", help="scrape sites into data/")
     crawl.add_argument("sites", nargs="*", help="site names; default is all enabled")
     crawl.add_argument("--max-pages", type=int, help="stop after N pages per collection")
+    crawl.add_argument("--scraped-at", type=crawl_stamp, metavar="STAMP",
+                       help="an earlier run's stamp, to add sites to that crawl "
+                            "instead of starting a new one")
     crawl.set_defaults(handler=run_crawl)
 
     probe_cmd = sub.add_parser("probe", help="check whether a domain can be scraped")
@@ -207,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
+    _stop_cleanly_on_sigterm()
 
     try:
         return args.handler(args)

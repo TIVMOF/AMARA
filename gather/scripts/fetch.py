@@ -19,6 +19,20 @@ ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 # override by default - so a one-off run can be tweaked without editing .env.
 load_dotenv(ENV_PATH)
 
+
+def _where_to_set_it(env_path: Path) -> str:
+    # Point at whatever is actually there. A container has no .env and no
+    # .env.example - its credentials arrive through the environment - so
+    # naming a file that does not exist sends you looking for the wrong thing.
+    if env_path.exists():
+        return f"  Set it in the environment, or add it to {env_path}"
+    example = env_path.with_name(".env.example")
+    if example.exists():
+        return ("  Set it in the environment, or for a local run:\n"
+                f"    cp {example} {env_path}")
+    return "  Pass it at run time: docker run -e ..., or an Airflow secret"
+
+
 RETRY_STATUS = {500, 502, 503, 504}
 THROTTLE_STATUS = 429
 
@@ -87,8 +101,7 @@ def env(name: str) -> str:
     if value in (None, ""):
         raise ConfigError(
             f"{ENV_PREFIX}{name} is not set.\n"
-            f"  Expected it in {ENV_PATH}\n"
-            f"  Fix: cp {ENV_PATH.parent}/.env.example {ENV_PATH}"
+            + _where_to_set_it(ENV_PATH)
         )
     return value
 

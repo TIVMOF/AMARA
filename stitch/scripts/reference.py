@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -152,7 +153,8 @@ def load_all() -> list[Reference]:
 
 # ── keeping the parquets in step ───────────────────────────────────────────────
 
-def sync(spark: SparkSession, reference: Reference) -> tuple[int, int]:
+def sync(spark: SparkSession, reference: Reference,
+         output_root: Path | None = None) -> tuple[int, int]:
     # Append anything the YAML has that the parquet does not.
     #
     # Returns (added, total). Values are only ever added: rows written by an
@@ -162,7 +164,7 @@ def sync(spark: SparkSession, reference: Reference) -> tuple[int, int]:
     # The merge happens in Python rather than Spark. These are vocabularies -
     # 263 brands is the largest - and reading a parquet in order to overwrite
     # the same path is not something Spark will do.
-    path = paths.OUTPUT_ROOT / reference.name
+    path = (paths.OUTPUT_ROOT if output_root is None else output_root) / reference.name
     held: list[dict[str, Any]] = []
     if (path / "_SUCCESS").exists():
         held = [row.asDict() for row in spark.read.parquet(str(path)).collect()]

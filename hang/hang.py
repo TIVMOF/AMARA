@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from typing import Callable
 
 from scripts import load_analytical, load_processed, validate_loaded
 
@@ -19,11 +20,26 @@ and `spark-submit stitch.py validate-upload`.
 Run a command with --help for its own options.
 """
 
+def _takes_no_arguments(name: str, run: Callable[[], object]) -> Callable[[list[str]], int]:
+    # The two loads declare no options. A lambda that ignored what followed
+    # meant `hang.py load-processed --help` silently ran a full Snowflake load
+    # instead of printing help, so anything unexpected stops the command.
+    def command(argv: list[str]) -> int:
+        if argv in (["-h"], ["--help"]):
+            print(f"python hang.py {name}\n\nTakes no options.")
+            return 0
+        if argv:
+            raise SystemExit(f"error: {name} takes no arguments, got: {' '.join(argv)}")
+        run()
+        return 0
+    return command
+
+
 # Each command takes the rest of the command line, so a script keeps whatever
 # arguments it declares rather than having them restated here.
-COMMANDS = {
-    "load-processed": lambda argv: load_processed.load(),
-    "load-analytical": lambda argv: load_analytical.load(),
+COMMANDS: dict[str, Callable[[list[str]], int]] = {
+    "load-processed": _takes_no_arguments("load-processed", load_processed.load),
+    "load-analytical": _takes_no_arguments("load-analytical", load_analytical.load),
     "validate-loaded": validate_loaded.main,
 }
 
@@ -32,8 +48,11 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
 
     if argv and argv[0] in COMMANDS:
-        COMMANDS[argv[0]](argv[1:])
-        return 0
+        # `or 0` because these signal failure by raising SystemExit rather than
+        # returning. Dropping the return value would turn a validator that ever
+        # starts returning a code into a silent success, which under Airflow is
+        # a green task on bad data.
+        return COMMANDS[argv[0]](argv[1:]) or 0
 
     parser = argparse.ArgumentParser(
         prog="python hang.py",

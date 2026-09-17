@@ -1,7 +1,7 @@
 # stitch
 
 Turns the staged crawls in `../shear/data/` into clean parquet
-tables under `data/processed/`, ready to load into Snowflake.
+tables under `data/`, ready to load into Snowflake.
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
@@ -27,6 +27,22 @@ SPARK_HOME`.
 
 ```bash
 spark-submit --master "local[4]" --driver-memory 8g stitch.py
+```
+
+## In a container
+
+`amara-stitch`, built from the `Dockerfile` here — the only image carrying a
+JVM. `reference/*.yaml` ships inside it, so changing a brand means rebuilding.
+
+`AMARA_SHEARED_DIR` is read, `AMARA_STITCHED_DIR` is written, and `--output`
+overrides the latter per run. The image sets `SPARK_DRIVER_MEMORY=8g`, which
+PySpark reads when it starts the JVM: unset it and the default 1 GB driver will
+not hold 2.7M variants. The master stays `local[*]`; a cluster submission means
+overriding the entrypoint with `spark-submit`.
+
+```bash
+docker run --rm --init -v amara_sheared:/data/sheared:ro \
+                       -v amara_stitched:/data/stitched amara-stitch
 ```
 
 ## Where this stage stops

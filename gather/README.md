@@ -1,7 +1,7 @@
 # gather
 
 Collects raw product data from fashion retailers into JSON files under
-`data/raw/`.
+`data/`, one per retailer per crawl.
 
 Collection only. Every product a store serves is stored exactly as it arrived —
 no filtering, no field mapping, no cleaning, no interpretation. The one thing
@@ -11,6 +11,25 @@ catalogue.
 
 Everything that decides what a value *means* — brand classification, the
 product record shape, the dimensional model — lives in `../stitch/`.
+
+## In a container
+
+`amara-gather`, built from the `Dockerfile` here. `sites/*.yaml` ships inside
+the image — it is versioned config, so adding a retailer means rebuilding.
+
+`AMARA_GATHERED_DIR` says where to write, defaulting to `data/` when unset, so
+a checkout is unaffected. The four `AMARA_INGESTION_*` settings have working
+defaults baked into the image; the six `AMARA_SNOWFLAKE_*` ones for `upload` do
+not, and are passed at run time. Run it with `--init`, and see the root README
+for why.
+
+```bash
+docker run --rm --init -v amara_gathered:/data/gathered amara-gather crawl
+```
+
+A retry does not have to redo the whole crawl: `--scraped-at` takes an earlier
+run's stamp, so the sites that are missing join the crawl already on disk
+rather than starting a second one, which `validate` would reject.
 
 ## Setup
 

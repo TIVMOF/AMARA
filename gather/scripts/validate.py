@@ -10,12 +10,10 @@ from typing import Any, Iterator, NamedTuple
 
 from . import registry
 from .adapters.shopify import PAGE_SIZE, UNFILTERED_LABEL
+from .store import DATA_DIR as RAW_ROOT
 
 USAGE = ("python gather.py validate              every retailer file in data/\n"
          "python gather.py validate kith agjeans   named retailers only")
-
-# parents[1] is the component root: this module lives in gather/scripts/.
-RAW_ROOT = Path(__file__).resolve().parents[1] / "data"
 
 # gather writes <retailer>-<stamp>.json. The stamp carries no hyphen, so the
 # last one splits the two whatever the retailer is called.

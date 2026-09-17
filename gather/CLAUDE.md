@@ -42,7 +42,7 @@ inside an existing one. `registry.ADAPTERS` maps a site's `adapter:` key to its
 module.
 
 ```
-sites/*.yaml ──► registry.py ──► adapters/shopify.py ──► store.py ──► data/raw/
+sites/*.yaml ──► registry.py ──► adapters/shopify.py ──► store.py ──► data/
                                           │
                                        fetch.py     (the only module on the network)
 ```
@@ -84,7 +84,7 @@ short page `PAGE_ATTEMPTS` (3) times and only an empty page ends a listing.
 
 ### The output file
 
-One per crawl at `data/raw/<site>/<timestamp>.json`. Product bodies keyed by id
+One per crawl at `data/<site>-<timestamp>.json`. Product bodies keyed by id
 under `products`, the page-by-page trace as id lists under `responses`, and the
 crawl report alongside — `complete`, `pages`, `short_pages`, `listings`,
 `errors`, `vendors`, `throttled`, `rate_limit_*`.

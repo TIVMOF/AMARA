@@ -4,4 +4,4 @@
 # argparse. It is deliberately the one stage you can run anywhere without a
 # virtualenv:
 #
-#     python dismantling.py
+#     python shear.py

@@ -23,8 +23,11 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     for name, command in (("validate", validate.main), ("cleanup", cleanup.main)):
         if argv and argv[0] == name:
-            command(argv[1:])
-            return 0
+            # `or 0` because these signal failure by raising SystemExit
+            # rather than returning. Dropping the return value would turn a
+            # validator that ever starts returning a code into a silent
+            # success, which under Airflow is a green task on bad data.
+            return command(argv[1:]) or 0
 
     parser = argparse.ArgumentParser(
         prog="python shear.py",

@@ -72,8 +72,9 @@ python3 -m venv .venv
                      -r stitch/requirements.txt \
                      -r hang/requirements.txt
 
-cp gather/.env.example gather/.env    # crawler settings
-cp hang/.env.example   hang/.env      # Snowflake credentials
+cp gather/.env.example gather/.env    # crawler settings, and RAW credentials
+cp stitch/.env.example stitch/.env    # PROCESSED credentials, for `upload`
+cp hang/.env.example   hang/.env      # PROCESSED and ANALYTICAL credentials
 ```
 
 `shear/` is stdlib-only and runs on a bare `python3`. `stitch/` needs a JVM,
@@ -83,6 +84,65 @@ and `spark-submit` finds Spark through the `python` on PATH:
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 export PATH="$PWD/.venv/bin:$PATH"
 ```
+
+## Containers
+
+Each stage builds into an image of its own — `amara-gather`, `amara-shear`,
+`amara-stitch`, `amara-hang` — from the `Dockerfile` in its folder. Nothing is
+read from the host: a stage's config travels in its image, its data travels on
+a volume, and its credentials arrive at run time.
+
+```bash
+for s in gather shear stitch hang; do docker build -t "amara-$s" "./$s"; done
+```
+
+Three volumes carry the data between them, and each stage is told where its own
+storage is mounted:
+
+| variable | stage reads | stage writes | default with nothing set |
+|---|---|---|---|
+| `AMARA_GATHERED_DIR` | shear | gather | `gather/data` |
+| `AMARA_SHEARED_DIR` | stitch | shear | `shear/data` |
+| `AMARA_STITCHED_DIR` | — | stitch | `stitch/data` |
+
+They name a directory **inside the container**, and say nothing about what
+backs it. The images set them to `/data/gathered`, `/data/sheared` and
+`/data/stitched`; mount a volume there and the data persists, mount nothing and
+it lands in the container's own layer and is thrown away. Unset — which is how
+a checkout runs — each falls back to the path above, so a local
+`python gather.py crawl` behaves exactly as it always has.
+
+```bash
+docker run --rm --init -v amara_gathered:/data/gathered \
+  -e AMARA_SNOWFLAKE_TOKEN="$TOKEN" amara-gather crawl
+docker run --rm --init -v amara_gathered:/data/gathered:ro \
+                       -v amara_sheared:/data/sheared amara-shear
+docker run --rm --init -v amara_sheared:/data/sheared:ro \
+                       -v amara_stitched:/data/stitched amara-stitch
+docker run --rm --init -e AMARA_SNOWFLAKE_TOKEN="$TOKEN" amara-hang load-processed
+```
+
+`hang` takes no volume: everything it works on is already in Snowflake.
+
+**Use `--init`.** An exec-form entrypoint makes Python PID 1, and the kernel
+disables PID 1's default signal actions — so a `docker stop` arriving before
+the crawler has installed its own SIGTERM handler is dropped silently, and the
+stop costs the full grace period and a SIGKILL. Measured: 10.1s and exit 137
+without `--init`, 0.1s and exit 143 with it. Once the crawl is running its own
+handler takes over and a stop returns in 0.2s with exit 130, keeping every
+retailer already written.
+
+**What is baked in, and what is not.** `gather/sites/*.yaml` and
+`stitch/reference/*.yaml` ship inside their images — they are versioned config,
+so changing a brand or a retailer means rebuilding that image. No `.env` is
+ever copied in: `.dockerignore` excludes it, and every `AMARA_SNOWFLAKE_*`
+value is passed at run time. `python-dotenv` is loaded without `override`, so a
+real environment variable always wins over a file.
+
+Two sizing notes: `shear` reads a whole crawl file into memory and the largest
+is ~308 MB, so give it 4 GB. `stitch` runs Spark in local mode with
+`SPARK_DRIVER_MEMORY=8g` baked in — unset it and PySpark's 1 GB default will
+not hold 2.7M variants.
 
 ## Layout
 
