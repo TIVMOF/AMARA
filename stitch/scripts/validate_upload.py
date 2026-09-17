@@ -10,8 +10,8 @@ from .stage import by_dataset, encrypted_size
 
 
 USAGE = """\
-python hang.py validate-processed          every parquet against the stage
-python hang.py validate-processed products named tables only
+spark-submit stitch.py validate-upload          every parquet against the stage
+spark-submit stitch.py validate-upload products named tables only
 """
 
 
@@ -71,10 +71,10 @@ def check(tables: list[tuple[str, list[Path]]], held: dict[str, dict[str, int]],
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        prog="python hang.py validate-processed", description=USAGE,
+        prog="spark-submit stitch.py validate-upload", description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("tables", nargs="*", help="default is every table")
-    parser.add_argument("--processed", type=Path, default=paths.PROCESSED_ROOT)
+    parser.add_argument("--processed", type=Path, default=paths.OUTPUT_ROOT)
     args = parser.parse_args(argv)
 
     if not args.processed.is_dir():

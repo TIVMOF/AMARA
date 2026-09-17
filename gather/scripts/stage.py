@@ -26,14 +26,3 @@ def listing(cursor, stage: str) -> list[tuple[str, int]]:
 def by_name(cursor, stage: str) -> dict[str, tuple[str, int]]:
     # Keyed by base name, which is what matches a local file.
     return {Path(path).name: (path, size) for path, size in listing(cursor, stage)}
-
-
-def by_dataset(cursor, stage: str) -> dict[str, dict[str, int]]:
-    # Keyed by the directory a file sits in, then by base name. The processed
-    # stage is laid out one directory per table.
-    held: dict[str, dict[str, int]] = {}
-    for path, size in listing(cursor, stage):
-        parts = Path(path).parts
-        if len(parts) >= 2:
-            held.setdefault(parts[-2], {})[parts[-1]] = size
-    return held

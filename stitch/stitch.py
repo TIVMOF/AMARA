@@ -6,7 +6,8 @@ from pathlib import Path
 
 from pyspark.sql import DataFrame, SparkSession
 
-from scripts import paths, reference, staging, tables, validate
+from scripts import (cleanup, paths, reference, staging, tables, upload_processed,
+                     validate, validate_upload)
 
 
 # What --help prints above the options.
@@ -15,6 +16,9 @@ spark-submit stitch.py              the single staged crawl
 spark-submit stitch.py --crawl PATH an explicit staged crawl directory
 spark-submit stitch.py --dry-run    build and report, write nothing
 spark-submit stitch.py validate     is the stitched output sound?
+spark-submit stitch.py upload       the parquets -> the PROCESSED stage
+spark-submit stitch.py validate-upload   is every parquet in the stage?
+spark-submit stitch.py cleanup      empty data/, once it is uploaded
 """
 
 
@@ -118,9 +122,12 @@ def main(argv: list[str] | None = None) -> int:
     # line intact, so it keeps its own arguments rather than having them
     # re-declared here and kept in step by hand.
     argv = sys.argv[1:] if argv is None else argv
-    if argv and argv[0] == "validate":
-        validate.main(argv[1:])
-        return 0
+    for name, command in (("validate", validate.main), ("upload", upload_processed.main),
+                          ("validate-upload", validate_upload.main),
+                          ("cleanup", cleanup.main)):
+        if argv and argv[0] == name:
+            command(argv[1:])
+            return 0
 
     parser = argparse.ArgumentParser(
         prog="spark-submit stitch.py",
