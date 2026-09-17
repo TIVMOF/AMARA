@@ -1,4 +1,6 @@
 # Crawling and config. Nothing here parses or interprets a product.
-requests>=2.31.0        # the only network client; see scripts/fetch.py
+curl_cffi>=0.7.0        # the only network client; see scripts/fetch.py.
+                        # Used for its browser TLS fingerprint, not its
+                        # speed - several stores 429 urllib3 on sight.
 PyYAML>=6.0.1           # sites/*.yaml
 python-dotenv>=1.0.0    # AMARA_INGESTION_* from .env
