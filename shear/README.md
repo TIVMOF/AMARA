@@ -8,6 +8,7 @@ python shear.py path/to/crawl.json  # one crawl
 
 python3 shear.py validate           # is the staged output sound?
 python3 shear.py validate kith      # one site
+python3 shear.py cleanup            # empty data/, once it is stitched
 ```
 
 No dependencies beyond the standard library, so this is the one stage that

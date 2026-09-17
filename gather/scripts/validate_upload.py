@@ -3,15 +3,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from . import paths
 from .connection import connect, env
 from .findings import Finding, error, report, warn
 from .stage import by_name, encrypted_size
+from .store import DATA_DIR as RAW_ROOT
 
 
 USAGE = """\
-python hang.py validate-raw            every crawl file against the raw stage
-python hang.py validate-raw kith       named retailers only
+python gather.py validate-upload       every crawl file against the raw stage
+python gather.py validate-upload kith  named retailers only
 """
 
 
@@ -63,10 +63,10 @@ def check(crawls: list[tuple[str, Path]], held: dict[str, tuple[str, int]],
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        prog="python hang.py validate-raw", description=USAGE,
+        prog="python gather.py validate-upload", description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("retailers", nargs="*", help="default is every crawl file")
-    parser.add_argument("--raw", type=Path, default=paths.RAW_ROOT)
+    parser.add_argument("--raw", type=Path, default=RAW_ROOT)
     args = parser.parse_args(argv)
 
     if not args.raw.is_dir():

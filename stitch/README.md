@@ -10,6 +10,9 @@ spark-submit stitch.py --crawl PATH
 spark-submit stitch.py --dry-run
 
 spark-submit stitch.py validate      # is the output sound?
+spark-submit stitch.py upload        # the parquets -> the PROCESSED stage
+spark-submit stitch.py validate-upload   # is every parquet in the stage?
+spark-submit stitch.py cleanup       # empty data/, once it is uploaded
 ```
 
 Spark needs a JVM; 21 is what Spark 4 wants. `--dry-run` builds and reports

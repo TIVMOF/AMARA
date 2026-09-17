@@ -62,6 +62,10 @@ brands:
     tier: Luxury
     styles: [Technical]
     aliases: [ALYX, Alyx Studio]
+  "424":
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   44 Label Group:
     segment: Streetwear
     tier: Premium
@@ -98,6 +102,11 @@ brands:
     tier: Premium
     styles: [Performance]
     aliases: [adidas Originals, Y-3, Adidas Y-3, adidas Performance]
+  Advisory Board Crystals:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [ABC]
   Aeyde:
     segment: Contemporary Designer
     tier: Premium
@@ -110,6 +119,15 @@ brands:
     segment: Denim
     tier: Premium
     styles: [Casual]
+  Aimé Leon Dore:
+    segment: Streetwear
+    tier: Premium
+    styles: [Contemporary, Street]
+    aliases: [ALD]
+  AKILA:
+    segment: Casual
+    tier: Premium
+    styles: [Contemporary]
   Alaïa:
     segment: Luxury House
     tier: Luxury
@@ -127,6 +145,10 @@ brands:
     segment: Casual
     tier: Premium
     styles: [Casual]
+  AMBUSH:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Contemporary, Street]
   American Eagle:
     segment: High Street
     tier: Mainstream
@@ -152,6 +174,11 @@ brands:
     segment: Designer
     tier: Luxury
     styles: [Avant-Garde]
+  Anti Social Social Club:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
+    aliases: [ASSC]
   Aquazzura:
     segment: Luxury House
     tier: Luxury
@@ -174,6 +201,10 @@ brands:
     segment: Designer
     tier: Premium
     styles: [Heritage]
+  Awake NY:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Axel Arigato:
     segment: Designer
     tier: Premium
@@ -202,6 +233,15 @@ brands:
     segment: High Street
     tier: Mainstream
     styles: [Casual]
+  Better With Age:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Billionaire Boys Club:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [BBC]
   Birkenstock:
     segment: Casual
     tier: Mainstream
@@ -210,6 +250,10 @@ brands:
     segment: Luxury House
     tier: Luxury
     styles: [Minimalist]
+  Brain Dead:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street, Contemporary]
   Brioni:
     segment: Luxury House
     tier: High Luxury
@@ -226,6 +270,11 @@ brands:
     segment: Contemporary Designer
     tier: Premium
     styles: [Minimalist]
+  By Parra:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [Parra]
   C&A:
     segment: High Street
     tier: Mainstream
@@ -288,6 +337,10 @@ brands:
     segment: Designer
     tier: Luxury
     styles: [Feminine]
+  Chrome Hearts:
+    segment: Designer
+    tier: High Luxury
+    styles: [Glamour, Street]
   Church's:
     segment: Luxury House
     tier: Luxury
@@ -314,7 +367,7 @@ brands:
     segment: Designer
     tier: Luxury
     styles: [Avant-Garde]
-    aliases: [Comme des Garcons, Comme Des Garcons Homme Plus, Comme des Garçons Homme Plus, CDG]
+    aliases: [Comme des Garcons, Comme Des Garcons Homme Plus, Comme des Garçons Homme Plus, CDG, Comme des Garcons PLAY, COMME DES GARÇONS WALLET, Comme des Garcons Wallet]
   Common Projects:
     segment: Designer
     tier: Premium
@@ -331,6 +384,10 @@ brands:
     segment: Designer
     tier: Premium
     styles: [Avant-Garde]
+  Crocs:
+    segment: Casual
+    tier: Mainstream
+    styles: [Casual]
   Cult Gaia:
     segment: Contemporary Designer
     tier: Premium
@@ -339,6 +396,10 @@ brands:
     segment: Contemporary Designer
     tier: Premium
     styles: [Minimalist]
+  Denim Tears:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Destin:
     segment: Contemporary Designer
     tier: Premium
@@ -347,6 +408,14 @@ brands:
     segment: Denim
     tier: Premium
     styles: [Casual]
+  Diet Starts Monday:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
+  Dime:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
   Dior:
     segment: Luxury House
     tier: High Luxury
@@ -373,6 +442,10 @@ brands:
     segment: Designer
     tier: Premium
     styles: [Street]
+  DSQUARED2:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour, Contemporary]
   Déhanche:
     segment: Contemporary Designer
     tier: Premium
@@ -393,6 +466,14 @@ brands:
     segment: Designer
     tier: Luxury
     styles: [Avant-Garde]
+  Entire Studios:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Contemporary]
+  Eric Emanuel:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Etro:
     segment: Designer
     tier: Luxury
@@ -442,6 +523,21 @@ brands:
     segment: Denim
     tier: Premium
     styles: [Casual]
+    aliases: [frame-denim]
+  Frankies Bikinis:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
+  Fucking Awesome:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [FA]
+  G-Shock:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Technical]
+    aliases: [Casio G-Shock]
   G-Star RAW:
     segment: Denim
     tier: Premium
@@ -480,16 +576,29 @@ brands:
     segment: Luxury House
     tier: Luxury
     styles: [Glamour]
+  Godspeed New York:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [Godspeed]
   Golden Goose:
     segment: Designer
     tier: Premium
     styles: [Heritage]
     aliases: [Golden Goose Deluxe Brand]
+  Gramicci:
+    segment: Outdoor
+    tier: Mainstream
+    styles: [Technical, Casual]
   Gucci:
     segment: Luxury House
     tier: Luxury
     styles: [Street]
     aliases: [Gucci Eyewear]
+  Guizio:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine, Contemporary]
   H&M:
     segment: High Street
     tier: Mainstream
@@ -502,14 +611,35 @@ brands:
     segment: Basics
     tier: Premium
     styles: [Minimalist]
+  Hatton Labs:
+    segment: Designer
+    tier: Premium
+    styles: [Glamour]
+  Hellstar:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Helly Hansen:
     segment: Outdoor
     tier: Premium
     styles: [Heritage]
+  Helmut Lang:
+    segment: Designer
+    tier: Luxury
+    styles: [Minimalist]
   Hermès:
     segment: Luxury House
     tier: High Luxury
     styles: [Classic]
+  Heron Preston:
+    segment: Streetwear
+    tier: Premium
+    styles: [Contemporary, Street]
+  Herschel Supply Co:
+    segment: Casual
+    tier: Mainstream
+    styles: [Casual]
+    aliases: [Herschel]
   Hogan:
     segment: Luxury House
     tier: Luxury
@@ -524,11 +654,19 @@ brands:
     tier: Luxury
     styles: [Avant-Garde]
     aliases: [Homme Plisse Issey Miyake, Issey Miyake]
+  Honor The Gift:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Hugo Boss:
     segment: Casual
     tier: Premium
     styles: [Classic]
   Human Made:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Ice Cream:
     segment: Streetwear
     tier: Premium
     styles: [Street]
@@ -561,15 +699,27 @@ brands:
     segment: Designer
     tier: Luxury
     styles: [Glamour]
+  John Elliott:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Minimalist, Casual]
   Jordan:
     segment: Sportswear
     tier: Premium
     styles: [Performance]
     aliases: [Air Jordan, Jordan Brand]
+  Jungles Jungles:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
   Junya Watanabe:
     segment: Designer
     tier: Luxury
     styles: [Avant-Garde]
+  Justine Clenquet:
+    segment: Designer
+    tier: Premium
+    styles: [Glamour, Feminine]
   JW Anderson:
     segment: Luxury House
     tier: Luxury
@@ -578,6 +728,14 @@ brands:
     segment: Contemporary Designer
     tier: Premium
     styles: [Minimalist]
+  KAPITAL:
+    segment: Designer
+    tier: Premium
+    styles: [Heritage, Avant-Garde]
+  Kappa:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Performance, Heritage]
   Kenzo:
     segment: Designer
     tier: Premium
@@ -586,14 +744,24 @@ brands:
     segment: Designer
     tier: Luxury
     styles: [Minimalist]
+  KidSuper:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street, Avant-Garde]
+    aliases: [KID SUPER]
   Kith:
     segment: Streetwear
     tier: Premium
     styles: [Street]
+    aliases: [Kith Women, Kith Kids, Kith Baby]
   Kiton:
     segment: Luxury House
     tier: High Luxury
     styles: [Classic]
+  Ksubi:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
   Lacoste:
     segment: Casual
     tier: Premium
@@ -657,6 +825,10 @@ brands:
     segment: Casual
     tier: Premium
     styles: [Casual]
+  Malbon Golf:
+    segment: Sportswear
+    tier: Premium
+    styles: [Performance, Casual]
   Mammut:
     segment: Outdoor
     tier: Premium
@@ -669,10 +841,19 @@ brands:
     segment: Luxury House
     tier: Luxury
     styles: [Glamour]
+  Marc Jacobs:
+    segment: Designer
+    tier: Luxury
+    styles: [Contemporary, Glamour]
   Marine Serre:
     segment: Designer
     tier: Premium
     styles: [Street]
+  Market:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
+    aliases: [Chinatown Market]
   Marni:
     segment: Designer
     tier: Luxury
@@ -681,6 +862,11 @@ brands:
     segment: Casual
     tier: Premium
     styles: [Casual]
+  mastermind WORLD:
+    segment: Streetwear
+    tier: Luxury
+    styles: [Street]
+    aliases: [mastermind JAPAN]
   Matteau:
     segment: Contemporary Designer
     tier: Premium
@@ -690,10 +876,26 @@ brands:
     tier: High Luxury
     styles: [Classic]
     aliases: [S Max Mara, Max Mara Leisure, Weekend Max Mara]
+  MCM:
+    segment: Luxury House
+    tier: Luxury
+    styles: [Glamour, Heritage]
+  Merrell:
+    segment: Outdoor
+    tier: Mainstream
+    styles: [Performance, Technical]
+  Miaou:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Feminine]
   Missoni:
     segment: Luxury House
     tier: Luxury
     styles: [Glamour]
+  Mitchell & Ness:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Heritage]
   Miu Miu:
     segment: Luxury House
     tier: Luxury
@@ -712,14 +914,31 @@ brands:
     tier: Premium
     styles: [Casual]
     aliases: [Mother Denim]
+  Nahmias:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Contemporary, Street]
   Nanushka:
     segment: Contemporary Designer
     tier: Premium
     styles: [Minimalist]
+  Needles:
+    segment: Designer
+    tier: Premium
+    styles: [Contemporary]
+  Neighborhood:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [NBHD]
   New Balance:
     segment: Sportswear
     tier: Premium
     styles: [Performance]
+  New Era:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Heritage, Street]
   Next:
     segment: High Street
     tier: Mainstream
@@ -754,6 +973,11 @@ brands:
     segment: Sportswear
     tier: Premium
     styles: [Performance]
+  OAMC:
+    segment: Designer
+    tier: Luxury
+    styles: [Minimalist, Technical]
+    aliases: [OAMC PEACEMAKER]
   Off-White:
     segment: Streetwear
     tier: Luxury
@@ -764,6 +988,18 @@ brands:
     tier: Premium
     styles: [Performance]
     aliases: [On Running, On Running Shoes]
+  One Of These Days:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street, Heritage]
+  Onitsuka Tiger:
+    segment: Sportswear
+    tier: Premium
+    styles: [Heritage]
+  Only NY:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
   Our Legacy:
     segment: Designer
     tier: Premium
@@ -773,9 +1009,18 @@ brands:
     segment: Denim
     tier: Premium
     styles: [Casual]
+  Palace:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [Palace Skateboards]
   Palm Angels:
     segment: Streetwear
     tier: Luxury
+    styles: [Street]
+  Paper Planes:
+    segment: Streetwear
+    tier: Mainstream
     styles: [Street]
   Paris Texas:
     segment: Contemporary Designer
@@ -785,6 +1030,10 @@ brands:
     segment: Outdoor
     tier: Premium
     styles: [Heritage]
+  Patta:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Paul Smith:
     segment: Designer
     tier: Premium
@@ -797,6 +1046,10 @@ brands:
     segment: Outdoor
     tier: Premium
     styles: [Technical]
+  Pleasures:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Polo Ralph Lauren:
     segment: Casual
     tier: Premium
@@ -830,6 +1083,10 @@ brands:
     segment: Sportswear
     tier: Mainstream
     styles: [Performance]
+  Purple Brand:
+    segment: Denim
+    tier: Premium
+    styles: [Casual]
   R13:
     segment: Designer
     tier: Premium
@@ -838,6 +1095,10 @@ brands:
     segment: Luxury House
     tier: Luxury
     styles: [Avant-Garde]
+  Raf Simons:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde, Contemporary]
   Ralph Lauren:
     segment: Casual
     tier: Premium
@@ -847,6 +1108,14 @@ brands:
     segment: Sportswear
     tier: Premium
     styles: [Performance]
+  Ray-Ban:
+    segment: Casual
+    tier: Mainstream
+    styles: [Heritage, Classic]
+  Real Bad Man:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Rebecca Vallance:
     segment: Designer
     tier: Luxury
@@ -905,15 +1174,28 @@ brands:
     tier: Premium
     styles: [Glamour]
     aliases: [ROTATE BIRGER CHRISTENSEN, Rotate]
+  RTA:
+    segment: Contemporary Designer
+    tier: Premium
+    styles: [Contemporary]
   Róhe:
     segment: Contemporary Designer
     tier: Premium
     styles: [Minimalist]
+  Sacai:
+    segment: Designer
+    tier: Luxury
+    styles: [Avant-Garde, Contemporary]
   Saint Laurent:
     segment: Luxury House
     tier: Luxury
     styles: [Minimalist]
     aliases: [Yves Saint Laurent, Saint Laurent Paris, YSL]
+  Saint Mxxxxxx:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [SAINT MICHAEL]
   Salomon:
     segment: Outdoor
     tier: Premium
@@ -922,6 +1204,14 @@ brands:
     segment: Casual
     tier: Premium
     styles: [Casual]
+  Satoshi Nakamoto:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+  Saucony:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Performance]
   Schiaparelli:
     segment: Luxury House
     tier: Luxury
@@ -941,6 +1231,10 @@ brands:
     styles: [Classic]
   Sergio Rossi:
     segment: Luxury House
+    tier: Luxury
+    styles: [Glamour]
+  SHAY:
+    segment: Designer
     tier: Luxury
     styles: [Glamour]
   SHUSHU/TONG:
@@ -980,10 +1274,31 @@ brands:
     tier: Luxury
     styles: [Avant-Garde, Street]
     aliases: [SONG FOR THE MUTE]
+  South2 West8:
+    segment: Outdoor
+    tier: Premium
+    styles: [Technical, Heritage]
+  Sp5der:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [Spider]
+  Sprayground:
+    segment: Streetwear
+    tier: Mainstream
+    styles: [Street]
   St. Agni:
     segment: Contemporary Designer
     tier: Premium
     styles: [Minimalist]
+  Stampd:
+    segment: Streetwear
+    tier: Premium
+    styles: [Minimalist, Street]
+  Stance:
+    segment: Sportswear
+    tier: Mainstream
+    styles: [Performance]
   Stella McCartney:
     segment: Luxury House
     tier: Luxury
@@ -1005,6 +1320,14 @@ brands:
     segment: Streetwear
     tier: Premium
     styles: [Street]
+  Sydney Evan:
+    segment: Designer
+    tier: Luxury
+    styles: [Glamour, Feminine]
+  Tagliatore:
+    segment: Designer
+    tier: Premium
+    styles: [Classic, Occasion]
   Ted Baker:
     segment: Casual
     tier: Premium
@@ -1026,10 +1349,18 @@ brands:
     segment: Luxury House
     tier: High Luxury
     styles: [Minimalist]
+  thisisneverthat:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Thom Browne:
     segment: Luxury House
     tier: Luxury
     styles: [Classic]
+  Thug Club:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
   Timberland:
     segment: Casual
     tier: Mainstream
@@ -1075,6 +1406,11 @@ brands:
     segment: Sportswear
     tier: Mainstream
     styles: [Performance]
+  Undefeated:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street]
+    aliases: [UNDFTD]
   Under Armour:
     segment: Sportswear
     tier: Premium
@@ -1112,6 +1448,10 @@ brands:
     segment: Basics
     tier: Mainstream
     styles: [Casual]
+  Vintage Frames Company:
+    segment: Casual
+    tier: Premium
+    styles: [Glamour, Heritage]
   visvim:
     segment: Designer
     tier: Luxury
@@ -1124,10 +1464,18 @@ brands:
     segment: Sportswear
     tier: Premium
     styles: [Performance]
+  Wacko Maria:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street, Heritage]
   Weekday:
     segment: High Street
     tier: Mainstream
     styles: [Casual]
+  Who Decides War:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street, Avant-Garde]
   Willy Chavarria:
     segment: Designer
     tier: Premium
@@ -1136,10 +1484,18 @@ brands:
     segment: Denim
     tier: Mainstream
     styles: [Heritage]
+  Yeezy:
+    segment: Streetwear
+    tier: Premium
+    styles: [Street, Minimalist]
   Yohji Yamamoto:
     segment: Designer
     tier: Luxury
     styles: [Avant-Garde]
+  Yvonne Léon:
+    segment: Designer
+    tier: Luxury
+    styles: [Feminine, Glamour]
   Zara:
     segment: High Street
     tier: Mainstream

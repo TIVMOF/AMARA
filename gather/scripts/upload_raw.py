@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import paths
 from .connection import connect, env
-
-
-RAW_ROOT = paths.RAW_ROOT
+from .store import DATA_DIR as RAW_ROOT
 
 
 def crawl_files() -> list[tuple[str, Path]]:
@@ -48,8 +45,8 @@ def upload() -> None:
                 )
 
                 for row in cursor.fetchall():
-                    name, _, status, *_ = row
-                    print(f"    {name} -> {status}")
+                    name, _, _, size, *_, status, _ = row
+                    print(f"    {name} -> {status} ({size:,} bytes)")
 
     finally:
         connection.close()
