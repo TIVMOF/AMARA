@@ -24,7 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      # contents: write cuts the tag and the GitHub release; packages: write
+      # pushes the image. A composite action cannot declare either itself.
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
