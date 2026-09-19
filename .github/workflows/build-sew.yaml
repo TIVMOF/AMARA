@@ -8,7 +8,7 @@ on:
     paths:
       - 'sew/**'
       - '.github/workflows/build-sew.yaml'
-      - '.github/workflows/build-image.yaml'
+      - '.github/workflows/composite-actions/build-image.yaml'
   # So a build can be re-run without an empty commit.
   workflow_dispatch:
 
@@ -17,6 +17,6 @@ permissions:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-image.yaml
+    uses: ./.github/workflows/composite-actions/build-image.yaml
     with:
       component: sew

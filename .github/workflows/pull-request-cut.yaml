@@ -11,7 +11,7 @@ on:
     paths:
       - 'cut/**'
       - '.github/workflows/pull-request-cut.yaml'
-      - '.github/workflows/build-image.yaml'
+      - '.github/workflows/composite-actions/build-image.yaml'
 
 permissions:
   contents: read
@@ -23,6 +23,6 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-image.yaml
+    uses: ./.github/workflows/composite-actions/build-image.yaml
     with:
       component: cut
