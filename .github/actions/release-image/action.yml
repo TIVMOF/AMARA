@@ -1,0 +1,106 @@
+# The release recipe, used by release-{get,cut,sew}.yaml. This is the only
+# thing here that publishes: it builds a stage's image and pushes it to the
+# GitHub Container Registry as ghcr.io/<owner>/amara-<stage>.
+#
+# A composite action rather than a reusable workflow - see ../build-image.
+#
+# Two consequences of that choice, both handled below:
+#   - a composite action cannot read the `secrets` context, so the token is
+#     passed in as an input;
+#   - it cannot declare `permissions`, so the caller's job grants
+#     packages: write.
+name: Release AMARA image
+description: Build one stage's image and push it to ghcr.io.
+
+inputs:
+  component:
+    description: Which stage to release - get, cut or sew.
+    required: true
+  version:
+    description: The version to publish, e.g. 1.2.0.
+    required: true
+  latest:
+    description: Also move the :latest tag to this version.
+    required: false
+    default: 'true'
+  token:
+    description: A token with packages:write - normally secrets.GITHUB_TOKEN.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check the version looks like one
+      # A typo here becomes a published tag, and published tags are awkward to
+      # take back. Digits and dots, optionally a pre-release suffix.
+      shell: bash
+      run: |
+        version='${{ inputs.version }}'
+        if ! printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$'; then
+          echo "::error::'$version' is not a version like 1.2.0 or 1.2.0-rc.1"
+          exit 1
+        fi
+
+    - name: Set up Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Work out the image name and tags
+      # GHCR rejects an upper-case path, and this repository's owner is
+      # TIVMOF - so github.repository_owner cannot be used as it comes.
+      #
+      # The tag list is built here rather than in the `tags:` input below, so
+      # that skipping :latest omits the line instead of leaving an empty one
+      # for the action to interpret.
+      shell: bash
+      run: |
+        # tr rather than bash's ${x,,}: the latter is bash 4+, and this is the
+        # one line that decides whether the push lands at all.
+        owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+        image="ghcr.io/$owner/amara-${{ inputs.component }}"
+        echo "IMAGE=$image" >> "$GITHUB_ENV"
+        {
+          echo "TAGS<<__EOF__"
+          echo "$image:${{ inputs.version }}"
+          if [ "${{ inputs.latest }}" = "true" ]; then
+            echo "$image:latest"
+          fi
+          echo "__EOF__"
+        } >> "$GITHUB_ENV"
+
+    - name: Log in to ghcr.io
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+
+    - name: Build and push ${{ env.IMAGE }}
+      id: push
+      uses: docker/build-push-action@v6
+      with:
+        context: ./${{ inputs.component }}
+        push: true
+        tags: ${{ env.TAGS }}
+        labels: |
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.version=${{ inputs.version }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        cache-from: type=gha,scope=${{ inputs.component }}
+
+    - name: Summary
+      shell: bash
+      run: |
+        {
+          echo "### Published \`amara-${{ inputs.component }}\`"
+          echo
+          echo "| tag | |"
+          echo "|---|---|"
+          echo "| \`${{ env.IMAGE }}:${{ inputs.version }}\` | pushed |"
+          echo "| \`${{ env.IMAGE }}:latest\` | ${{ inputs.latest == 'true' && 'moved' || 'left alone' }} |"
+          echo
+          echo "Digest: \`${{ steps.push.outputs.digest }}\`"
+          echo
+          echo '```'
+          echo "docker pull ${{ env.IMAGE }}:${{ inputs.version }}"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"

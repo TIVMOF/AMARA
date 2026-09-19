@@ -1,0 +1,27 @@
+name: pull request sew
+
+on:
+  pull_request:
+    paths:
+      - 'sew/**'
+      - '.github/workflows/pull-request-sew.yaml'
+      - '.github/actions/build-image/action.yml'
+
+permissions:
+  contents: read
+
+# A new push supersedes the run in flight for the same pull request.
+concurrency:
+  group: pr-sew-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build amara-sew
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          component: sew

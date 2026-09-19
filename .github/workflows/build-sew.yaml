@@ -1,0 +1,25 @@
+name: build sew
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sew/**'
+      - '.github/workflows/build-sew.yaml'
+      - '.github/actions/build-image/action.yml'
+  # So a build can be re-run without an empty commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build amara-sew
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          component: sew
