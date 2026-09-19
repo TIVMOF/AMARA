@@ -1,5 +1,3 @@
-# Publishes ghcr.io/tivmof/amara-get. Run by hand from the Actions tab:
-# pick a branch or tag, type the version, and it builds and pushes.
 name: release get
 
 on:
@@ -27,9 +25,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      # Writing to the registry is the whole point, and the only extra
-      # permission needed. A composite action cannot declare this itself,
-      # so it is granted here. GITHUB_TOKEN covers it - no PAT, no secret.
       packages: write
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +33,4 @@ jobs:
           component: get
           version: ${{ inputs.version }}
           latest: ${{ inputs.latest }}
-          # A composite action cannot read the secrets context, so it is
-          # handed the token rather than reaching for it.
           token: ${{ secrets.GITHUB_TOKEN }}

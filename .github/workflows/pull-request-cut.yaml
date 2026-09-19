@@ -1,13 +1,7 @@
-# Does amara-cut still build on this branch? Runs when a pull request touching
-# this stage is opened, and again on each push to it. Builds only, never pushes:
-# a pull request from a fork has a read-only token and could not publish anyway.
 name: pull request cut
 
 on:
   pull_request:
-    # The default types - opened, synchronize, reopened - are deliberate.
-    # 'opened' alone would check the first commit of a pull request and
-    # nothing after it, which is the state least likely to be the one merged.
     paths:
       - 'cut/**'
       - '.github/workflows/pull-request-cut.yaml'
