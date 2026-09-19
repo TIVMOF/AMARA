@@ -7,7 +7,7 @@
 # PySpark needs a JVM on PATH - Spark 4 wants Java 17 or 21:
 #
 #     JAVA_HOME=$(/usr/libexec/java_home -v 21) python cut.py
-pyspark>=4.0.0          # pulls py4j, and provides spark-submit itself
+pyspark>=4.2.0          # pulls py4j, and provides spark-submit itself
 PyYAML>=6.0.1           # reference/*.yaml
 
 # Not imported by this code, but needed to open the output with pandas
