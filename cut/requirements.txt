@@ -8,7 +8,7 @@
 #
 #     JAVA_HOME=$(/usr/libexec/java_home -v 21) python cut.py
 pyspark>=4.0.0          # pulls py4j, and provides spark-submit itself
-PyYAML>=6.0.1           # reference/*.yaml
+PyYAML>=6.0.3           # reference/*.yaml
 
 # Not imported by this code, but needed to open the output with pandas
 # (pd.read_parquet) or to use toPandas(). Without it pandas raises
