@@ -18,4 +18,4 @@ pyarrow>=17.0.0
 # `python cut.py upload` puts the parquets into Snowflake's PROCESSED stage.
 # The tables themselves are loaded from there by sew.
 snowflake-connector-python>=3.12.0   # see scripts/upload_processed.py
-python-dotenv>=1.0.0                 # AMARA_SNOWFLAKE_* from .env
+python-dotenv>=1.2.3                 # AMARA_SNOWFLAKE_* from .env
