@@ -3,7 +3,7 @@ curl_cffi>=0.7.0        # the only network client; see scripts/fetch.py.
                         # Used for its browser TLS fingerprint, not its
                         # speed - several stores 429 urllib3 on sight.
 PyYAML>=6.0.1           # sites/*.yaml
-python-dotenv>=1.0.0    # AMARA_INGESTION_* and AMARA_SNOWFLAKE_* from .env
+python-dotenv>=1.2.3    # AMARA_INGESTION_* and AMARA_SNOWFLAKE_* from .env
 
 # `python get.py upload` puts the crawl JSON into Snowflake's RAW stage.
 # Nothing else here touches the network beyond the stores themselves.
