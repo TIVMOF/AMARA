@@ -1,6 +1,5 @@
-gather/data/
-shear/data/
-stitch/data/
+get/data/
+cut/data/
 
 # secrets / local config. A bare `.env` matches at any depth, so each
 # component's own file is covered.
