@@ -1,0 +1,56 @@
+# The build recipe, used by the six workflows that only check an image builds:
+# build-{get,cut,sew}.yaml on main, and pull-request-{get,cut,sew}.yaml on a
+# pull request. Nothing here pushes - publishing is ../release-image.
+#
+# A composite action rather than a reusable workflow, which is what lets it sit
+# in a subdirectory: GitHub only resolves reusable workflows directly inside
+# .github/workflows, and a path into a subdirectory there fails to load at all.
+#
+# The caller must check the repository out first - a local action cannot be
+# read before its own repository is on disk.
+name: Build AMARA image
+description: Build one stage's docker image and prove it runs. Never pushes.
+
+inputs:
+  component:
+    description: Which stage to build - get, cut or sew.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build amara-${{ inputs.component }}
+      uses: docker/build-push-action@v6
+      with:
+        # The build context is the stage's own directory, which is what keeps
+        # the crawl data out of it: each stage has a .dockerignore excluding
+        # data/ and .env.
+        context: ./${{ inputs.component }}
+        push: false
+        # Loaded into the runner's daemon so the checks below can run it.
+        load: true
+        tags: amara-${{ inputs.component }}:ci
+        cache-from: type=gha,scope=${{ inputs.component }}
+        cache-to: type=gha,mode=max,scope=${{ inputs.component }}
+
+    - name: Smoke test
+      # A built image is not a working one. This catches the failure a build
+      # cannot: an image whose entry point cannot import what it needs - a
+      # missing COPY, a dependency left out of requirements.txt.
+      shell: bash
+      run: docker run --rm "amara-${{ inputs.component }}:ci" --help
+
+    - name: Check no credentials were baked in
+      # .dockerignore excludes .env, and a layer keeps whatever it was given
+      # even if a later step deletes it. Cheap to assert, expensive to miss.
+      shell: bash
+      run: |
+        if docker run --rm --entrypoint sh "amara-${{ inputs.component }}:ci" \
+             -c 'ls -a /app' | grep -qE '^\.env'; then
+          echo "::error::a .env file is present in amara-${{ inputs.component }}"
+          exit 1
+        fi
+        echo "no .env in the image"

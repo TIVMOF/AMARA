@@ -22,11 +22,22 @@ concurrency:
 
 jobs:
   release:
+    name: publish amara-cut ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
+      # Writing to the registry is the whole point, and the only extra
+      # permission needed. A composite action cannot declare this itself,
+      # so it is granted here. GITHUB_TOKEN covers it - no PAT, no secret.
       packages: write
-    uses: ./.github/workflows/composite-actions/release-image.yaml
-    with:
-      component: cut
-      version: ${{ inputs.version }}
-      latest: ${{ inputs.latest }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/release-image
+        with:
+          component: cut
+          version: ${{ inputs.version }}
+          latest: ${{ inputs.latest }}
+          # A composite action cannot read the secrets context, so it is
+          # handed the token rather than reaching for it.
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -11,7 +11,7 @@ on:
     paths:
       - 'cut/**'
       - '.github/workflows/pull-request-cut.yaml'
-      - '.github/workflows/composite-actions/build-image.yaml'
+      - '.github/actions/build-image/action.yml'
 
 permissions:
   contents: read
@@ -23,6 +23,11 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/composite-actions/build-image.yaml
-    with:
-      component: cut
+    name: build amara-cut
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          component: cut

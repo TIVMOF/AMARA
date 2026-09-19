@@ -8,7 +8,7 @@ on:
     paths:
       - 'cut/**'
       - '.github/workflows/build-cut.yaml'
-      - '.github/workflows/composite-actions/build-image.yaml'
+      - '.github/actions/build-image/action.yml'
   # So a build can be re-run without an empty commit.
   workflow_dispatch:
 
@@ -17,6 +17,13 @@ permissions:
 
 jobs:
   build:
-    uses: ./.github/workflows/composite-actions/build-image.yaml
-    with:
-      component: cut
+    name: build amara-cut
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # A local composite action cannot be read before its own repository is
+      # on disk, so the checkout comes first.
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          component: cut
