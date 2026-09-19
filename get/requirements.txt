@@ -7,4 +7,4 @@ python-dotenv>=1.0.0    # AMARA_INGESTION_* and AMARA_SNOWFLAKE_* from .env
 
 # `python get.py upload` puts the crawl JSON into Snowflake's RAW stage.
 # Nothing else here touches the network beyond the stores themselves.
-snowflake-connector-python>=3.12.0
+snowflake-connector-python>=4.7.3
