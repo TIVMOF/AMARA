@@ -1,0 +1,22 @@
+# Does amara-cut still build? Runs on every push to main that touches this
+# stage. Builds only - publishing is release-cut.yaml, by hand.
+name: build cut
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cut/**'
+      - '.github/workflows/build-cut.yaml'
+      - '.github/workflows/build-image.yaml'
+  # So a build can be re-run without an empty commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      component: cut

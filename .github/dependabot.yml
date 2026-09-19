@@ -1,0 +1,108 @@
+# Dependabot keeps the three stages' dependencies current.
+#
+# Each stage carries its own requirements.txt and its own Dockerfile so it can
+# be deployed on its own, so each gets its own entries here rather than one
+# repo-wide sweep - a pyspark bump should not open a pull request that also
+# touches the crawler.
+version: 2
+
+updates:
+  # The actions the workflows in .github/workflows use. Grouped, because these
+  # move together and nine near-identical bump PRs help nobody.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, github-actions]
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # ── python dependencies, one stage at a time ──────────────────────────────
+  #
+  # get:  curl_cffi, PyYAML, python-dotenv, snowflake-connector-python
+  # cut:  pyspark, pyarrow, PyYAML, python-dotenv, snowflake-connector-python
+  # sew:  snowflake-connector-python, python-dotenv
+  - package-ecosystem: pip
+    directory: /get
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, python, get]
+    commit-message:
+      prefix: deps(get)
+    groups:
+      get-python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /cut
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, python, cut]
+    commit-message:
+      prefix: deps(cut)
+    groups:
+      cut-python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Spark majors change the SQL engine's behaviour and the JVM it wants -
+      # Spark 4 needs Java 17 or 21, which is pinned in cut/Dockerfile. Take
+      # those deliberately, together with the base image, not on a Monday.
+      - dependency-name: pyspark
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: pip
+    directory: /sew
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, python, sew]
+    commit-message:
+      prefix: deps(sew)
+    groups:
+      sew-python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # ── base images ──────────────────────────────────────────────────────────
+  #
+  # All three are python:3.14-slim; cut also installs openjdk-21-jre-headless
+  # on top, which apt pins rather than Dockerfile, so only the python tag moves
+  # here.
+  - package-ecosystem: docker
+    directory: /get
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, docker, get]
+    commit-message:
+      prefix: deps(get)
+
+  - package-ecosystem: docker
+    directory: /cut
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, docker, cut]
+    commit-message:
+      prefix: deps(cut)
+
+  - package-ecosystem: docker
+    directory: /sew
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, docker, sew]
+    commit-message:
+      prefix: deps(sew)

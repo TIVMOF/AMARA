@@ -1,0 +1,22 @@
+# Does amara-sew still build? Runs on every push to main that touches this
+# stage. Builds only - publishing is release-sew.yaml, by hand.
+name: build sew
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sew/**'
+      - '.github/workflows/build-sew.yaml'
+      - '.github/workflows/build-image.yaml'
+  # So a build can be re-run without an empty commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      component: sew

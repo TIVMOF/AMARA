@@ -1,0 +1,22 @@
+# Does amara-get still build? Runs on every push to main that touches this
+# stage. Builds only - publishing is release-get.yaml, by hand.
+name: build get
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'get/**'
+      - '.github/workflows/build-get.yaml'
+      - '.github/workflows/build-image.yaml'
+  # So a build can be re-run without an empty commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      component: get
