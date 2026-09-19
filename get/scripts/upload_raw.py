@@ -1,0 +1,59 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from .connection import connect, env
+from .store import DATA_DIR as RAW_ROOT
+
+
+def crawl_files() -> list[tuple[str, Path]]:
+    if not RAW_ROOT.is_dir():
+        raise SystemExit(
+            f"no collected directory at {RAW_ROOT}\n"
+            f"  Nothing to upload. Crawl first: `python get.py crawl`."
+        )
+
+    files = sorted(RAW_ROOT.glob("*.json"))
+
+    if not files:
+        raise SystemExit(
+            f"no retailer crawls in {RAW_ROOT}\n"
+            f"  The directory is there but empty, so the crawl has not run -\n"
+            f"  or cleanup has already taken its output. Run `python get.py crawl`."
+        )
+
+    # One flat file per retailer, named <retailer>-<stamp>.json. The stamp
+    # carries no hyphen, so the last one splits the two apart whatever the
+    # retailer is called.
+    return [(path.stem.rsplit("-", 1)[0], path) for path in files]
+
+
+def upload() -> None:
+    crawls = crawl_files()
+
+    database = env("DATABASE")
+    schema = env("RAW_SCHEMA")
+
+    connection = connect(env("RAW_SCHEMA"))
+
+    try:
+        with connection.cursor() as cursor:
+            for retailer, crawl in crawls:
+                print(f"Uploading {retailer}: {crawl.name}")
+
+                stage = (
+                    f"@{database}.{schema}.AMARA_STAGE/{retailer}/"
+                )
+
+                cursor.execute(
+                    f"PUT 'file://{crawl.resolve()}' "
+                    f"{stage} "
+                    f"AUTO_COMPRESS=FALSE"
+                )
+
+                for row in cursor.fetchall():
+                    name, _, _, size, *_, status, _ = row
+                    print(f"    {name} -> {status} ({size:,} bytes)")
+
+    finally:
+        connection.close()

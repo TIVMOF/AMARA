@@ -1,0 +1,36 @@
+name: release get
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 1.2.0'
+        required: true
+        type: string
+      latest:
+        description: 'Also move the :latest tag'
+        required: false
+        default: true
+        type: boolean
+
+# One release of a stage at a time, and never cancelled halfway.
+concurrency:
+  group: release-get
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: publish amara-get ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/release-image
+        with:
+          component: get
+          version: ${{ inputs.version }}
+          latest: ${{ inputs.latest }}
+          token: ${{ secrets.GITHUB_TOKEN }}

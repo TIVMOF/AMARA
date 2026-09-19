@@ -1,0 +1,38 @@
+# luxury multi-brand, London
+# Discovered by: python get.py probe brownsfashion.com
+name: brownsfashion
+adapter: shopify
+base_url: https://www.brownsfashion.com
+
+currency: "GBP"
+country: "GB"
+
+# Empty = whole catalogue. Add Shopify collection handles to narrow the crawl -
+# `python get.py collections brownsfashion` lists them, largest first.
+collections: []
+
+# This catalogue is larger than the 25,000 an unfiltered /products.json can
+# reach, so the crawl will find the ceiling and shard across collections.
+# 2,700 are non-empty and they overlap heavily, so the largest 40 cover the
+# store for a fraction of the ~3,500 requests crawling all of them would cost.
+# See issues #5 and #16.
+discover_collections: true
+max_collections: 40
+
+# Stop after N pages per collection. null = until the store runs out.
+max_pages: null
+
+# Measured, not guessed. This store meters by sustained rate, and the budget it
+# refills at sits somewhere below 0.5/s:
+#
+#     1.0/s     37 requests, then a total lockout lasting ~7 minutes
+#     0.5/s    766 requests over ~25 minutes, then the same lockout
+#
+# A lockout is not a slowdown - every request is refused, so backing off cannot
+# trade its way out and the crawl abandons a collection every six waits. 0.5/s
+# reached 26 of 40 collections and 44,977 products before it went; this is the
+# next step down, chosen to stay under the refill rate rather than to ride it.
+rate_limit_rps: 0.33
+
+enabled: true
+notes: "multi-brand retailer"
