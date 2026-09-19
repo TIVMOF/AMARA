@@ -13,7 +13,7 @@ PyYAML>=6.0.1           # reference/*.yaml
 # Not imported by this code, but needed to open the output with pandas
 # (pd.read_parquet) or to use toPandas(). Without it pandas raises
 # "Unable to find a usable engine".
-pyarrow>=17.0.0
+pyarrow>=25.0.1
 
 # `python cut.py upload` puts the parquets into Snowflake's PROCESSED stage.
 # The tables themselves are loaded from there by sew.
